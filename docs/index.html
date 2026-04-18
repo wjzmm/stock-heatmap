@@ -30,7 +30,6 @@ body { background: #080c14; color: #e0e0e0; font-family: -apple-system, BlinkMac
   min-height: 34px;
   transition: all 0.15s; position: relative;
 }
-/* 手机端根据热度调高度 */
 .sector-card[data-span="1"] { min-height: 32px; }
 .sector-card[data-span="2"] { min-height: 38px; }
 .sector-card[data-span="3"] { min-height: 46px; }
@@ -48,12 +47,17 @@ body { background: #080c14; color: #e0e0e0; font-family: -apple-system, BlinkMac
 
 .sector-card:active { transform: scale(0.98); }
 .sector-card.has-stocks { cursor: pointer; }
-.sector-card.has-stocks::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; background: rgba(255,255,255,0.6); border-radius: 50%; }
+.sector-card.has-stocks::after {
+  content: ""; position: absolute; top: 3px; right: 3px;
+  width: 5px; height: 5px; background: rgba(255,255,255,0.7);
+  border-radius: 50%; pointer-events: none;
+}
 .s-left { display: flex; align-items: center; gap: 8px; }
 .s-name { font-size: 14px; font-weight: 700; white-space: nowrap; line-height: 1; }
 .s-change { font-size: 16px; font-weight: 800; line-height: 1; }
 .s-meta { font-size: 10px; opacity: 0.85; line-height: 1; }
-.s-hint { font-size: 9px; opacity: 0.5; line-height: 1; margin-left: 4px; }
+.s-hint { font-size: 9px; opacity: 0.6; line-height: 1; }
+.s-arrow { font-size: 14px; opacity: 0.7; margin-left: 4px; font-weight: 700; }
 
 /* 全市场 */
 .stock-list { display: flex; flex-direction: column; gap: 3px; }
@@ -169,8 +173,8 @@ function renderSectors(limit) {
     if (has) d.onclick = () => showDetail(i);
     const mainTxt = s.main > 0 ? `+主力${s.main}亿` : (s.main < 0 ? `主力${s.main}亿` : '');
     if (!isWide) {
-      const hint = has ? '<span class="s-hint">→</span>' : '';
-      d.innerHTML = `<div class="s-left"><span class="s-name">${s.name}</span><span class="s-change">${s.change>0?'+':''}${s.change}%</span></div><div style="text-align:right"><div class="s-meta">${mainTxt} 成交${s.amount}亿</div>${hint}</div>`;
+      const hint = has ? `<span class="s-arrow">▸</span>` : '';
+      d.innerHTML = `<div class="s-left"><span class="s-name">${s.name}</span><span class="s-change">${s.change>0?'+':''}${s.change}%</span></div><div style="display:flex;align-items:center"><span class="s-meta">${mainTxt} 成交${s.amount}亿</span>${hint}</div>`;
     } else {
       const hint = has ? `<div class="s-hint">展开${s.stocks.length}只→</div>` : '';
       d.innerHTML = `<div class="s-name">${s.name}</div><div class="s-change">${s.change>0?'+':''}${s.change}%</div><div class="s-meta">${mainTxt} 成交${s.amount}亿</div>${hint}`;
