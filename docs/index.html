@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A股板块热度云图 - 主力版</title>
+<title>A股板块热度云图 - 聚合版</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -26,11 +26,6 @@ body {
   color: #8892b0;
   font-size: 11px;
 }
-.header .formula {
-  color: #5a6680;
-  font-size: 10px;
-  margin-top: 2px;
-}
 .header .date-info {
   color: #ffd93d;
   font-size: 12px;
@@ -40,6 +35,8 @@ body {
   padding: 2px 10px;
   border-radius: 10px;
 }
+
+/* 刷新条 */
 .refresh-bar {
   max-width: 900px;
   margin: 0 auto 10px;
@@ -54,118 +51,98 @@ body {
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.05);
 }
-.refresh-bar .status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.refresh-bar .status { display: flex; align-items: center; gap: 6px; }
 .refresh-bar .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4caf50;
-  box-shadow: 0 0 6px #4caf50;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4caf50; box-shadow: 0 0 6px #4caf50;
   animation: pulse 1.5s infinite;
 }
-.refresh-bar .status-dot.paused {
-  background: #ff9800;
-  box-shadow: 0 0 6px #ff9800;
-  animation: none;
+.refresh-bar .status-dot.paused { background: #ff9800; box-shadow: 0 0 6px #ff9800; animation: none; }
+.refresh-bar .status-dot.off { background: #666; box-shadow: none; animation: none; }
+@keyframes pulse { 0%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.9)} 100%{opacity:1;transform:scale(1)} }
+.refresh-bar .countdown { font-family: "SF Mono", monospace; color: #64b5f6; font-weight: 600; font-size: 14px; min-width: 50px; text-align: center; }
+.refresh-bar .market-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(76,175,80,0.15); color: #81c784; }
+.refresh-bar .market-status.closed { background: rgba(255,152,0,0.15); color: #ffb74d; }
+.refresh-bar .market-status.holiday { background: rgba(244,67,54,0.15); color: #e57373; }
+.btn { background: rgba(100,181,246,0.15); border: 1px solid rgba(100,181,246,0.3); color: #64b5f6; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s; }
+.btn:hover { background: rgba(100,181,246,0.3); }
+.btn-back { background: rgba(255,107,107,0.15); border-color: rgba(255,107,107,0.3); color: #ff6b6b; }
+.btn-back:hover { background: rgba(255,107,107,0.3); }
+
+/* 视图切换 */
+.view { display: none; max-width: 900px; margin: 0 auto; }
+.view.active { display: block; }
+
+/* 板块视图 - Flexbox */
+.sector-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
 }
-.refresh-bar .status-dot.off {
-  background: #666;
-  box-shadow: none;
-  animation: none;
-}
-@keyframes pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1); }
-}
-.refresh-bar .countdown {
-  font-family: "SF Mono", "Courier New", monospace;
-  color: #64b5f6;
-  font-weight: 600;
-  font-size: 14px;
-  min-width: 50px;
-  text-align: center;
-}
-.refresh-bar .market-status {
-  font-size: 11px;
-  padding: 2px 8px;
+.sector-block {
   border-radius: 4px;
-  background: rgba(76, 175, 80, 0.15);
-  color: #81c784;
-}
-.refresh-bar .market-status.closed {
-  background: rgba(255, 152, 0, 0.15);
-  color: #ffb74d;
-}
-.refresh-bar .market-status.holiday {
-  background: rgba(244, 67, 54, 0.15);
-  color: #e57373;
-}
-.btn {
-  background: rgba(100, 181, 246, 0.15);
-  border: 1px solid rgba(100, 181, 246, 0.3);
-  color: #64b5f6;
-  padding: 3px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 11px;
-  transition: all 0.2s;
-}
-.btn:hover {
-  background: rgba(100, 181, 246, 0.3);
-}
-.grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 2px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-.block {
-  border-radius: 3px;
-  padding: 5px 4px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  min-height: 45px;
-  transition: transform 0.15s;
+  min-height: 60px;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+  position: relative;
 }
-.block:hover {
-  transform: scale(1.04);
+.sector-block:hover {
+  transform: scale(1.03);
   z-index: 10;
   filter: brightness(1.15);
 }
-.name {
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+.sector-name { font-size: 13px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+.sector-change { font-size: 12px; margin-top: 2px; font-weight: 600; }
+.sector-meta { font-size: 10px; opacity: 0.85; margin-top: 2px; }
+.sector-hint { font-size: 9px; opacity: 0.6; margin-top: 3px; }
+
+/* 个股视图 */
+.stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 900px;
+  margin: 0 auto 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
 }
-.change {
-  font-size: 10px;
-  margin-top: 1px;
-  font-weight: 500;
+.stock-header h2 { font-size: 16px; color: #ff6b6b; }
+.stock-header .stock-meta { color: #8892b0; font-size: 11px; }
+.stock-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
 }
-.zj {
-  font-size: 9px;
-  opacity: 0.85;
-  margin-top: 1px;
+.stock-block {
+  border-radius: 3px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 50px;
+  transition: transform 0.15s;
 }
-/* 颜色系统 - 中国股市红涨绿跌 */
+.stock-block:hover { transform: scale(1.04); z-index: 10; filter: brightness(1.15); }
+.stock-name { font-size: 11px; font-weight: 600; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+.stock-change { font-size: 10px; margin-top: 1px; }
+.stock-zj { font-size: 9px; opacity: 0.85; margin-top: 1px; }
+
+/* 颜色系统 */
 .up-h { background: #b71c1c; color: #fff; }
 .up-m { background: #d32f2f; color: #fff; }
 .up-l { background: #f44336; color: #fff; }
-.up-s { background: #ef5350; color: #fff; }
 .up-xs { background: #e57373; color: #fff; }
 .flat { background: #616161; color: #fff; }
 .down-xs { background: #81c784; color: #1b5e20; }
-.down-s { background: #66bb6a; color: #fff; }
 .down-l { background: #43a047; color: #fff; }
 .down-m { background: #2e7d32; color: #fff; }
 .down-h { background: #1b5e20; color: #fff; }
@@ -174,7 +151,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 10px;
   flex-wrap: wrap;
 }
 .legend-item {
@@ -191,7 +168,7 @@ body {
 }
 .footer {
   text-align: center;
-  margin-top: 6px;
+  margin-top: 10px;
   color: #5a6680;
   font-size: 9px;
 }
@@ -199,24 +176,35 @@ body {
 </head>
 <body>
 <div class="header">
-  <h1>🔥 A股板块热度云图 - 主力版</h1>
-  <div class="subtitle" id="pageDate">加载中...</div>
-  <div class="formula">热度 = 换手率 × 涨跌幅 × 成交额 × 主力系数 | 颜色=涨跌 大小=热度</div>
+  <h1>🔥 A股板块热度云图 - 聚合版</h1>
+  <div class="subtitle">点击板块查看成分股 | 颜色=涨跌幅 大小=热度</div>
   <div class="date-info" id="dataDate">加载中...</div>
 </div>
 
 <div class="refresh-bar" id="refreshBar">
-  <div class="status">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">交易中</span>
-  </div>
+  <div class="status"><div class="status-dot" id="statusDot"></div><span id="statusText">检测中</span></div>
   <div class="market-status" id="marketStatus">检测中...</div>
-  <span>下次刷新:</span>
-  <div class="countdown" id="countdown">60s</div>
+  <span>下次刷新:</span><div class="countdown" id="countdown">60s</div>
   <button class="btn" onclick="forceRefresh()">🔄 立即刷新</button>
 </div>
 
-<div class="grid" id="grid"></div>
+<!-- 板块视图 -->
+<div class="view active" id="sectorView">
+  <div class="sector-grid" id="sectorGrid"></div>
+</div>
+
+<!-- 个股视图 -->
+<div class="view" id="stockView">
+  <div class="stock-header">
+    <div>
+      <h2 id="stockTitle">板块名称</h2>
+      <div class="stock-meta" id="stockMeta"></div>
+    </div>
+    <button class="btn btn-back" onclick="showSectors()">← 返回板块视图</button>
+  </div>
+  <div class="stock-grid" id="stockGrid"></div>
+</div>
+
 <div class="legend">
   <div class="legend-item"><div class="legend-box up-h"></div>>7%</div>
   <div class="legend-item"><div class="legend-box up-m"></div>3-7%</div>
@@ -229,228 +217,130 @@ body {
   <div class="legend-item"><div class="legend-box down-h"></div><-7%</div>
 </div>
 <div class="footer">
-  数据源: 腾讯财经 + 东方财富主力流向 | 红色=涨 绿色=跌 | 自动刷新间隔: 60秒
+  数据源: 东方财富板块指数 + 成分股主力流向 | 第一层=板块聚合 第二层=成分股 | 自动刷新: 60秒
 </div>
 
 <script>
-// ========== 数据区 ==========
-const stocks = [
-  { name: "光迅科技", change: 10.0, heat: 42.78, zj: "+96825万", sector: "光通信/CPO" },
-  { name: "长芯博创", change: 7.79, heat: 42.16, zj: "+56354万", sector: "光通信/CPO" },
-  { name: "剑桥科技", change: 10.0, heat: 39.72, zj: "+64123万", sector: "光通信/CPO" },
-  { name: "天孚通信", change: 6.67, heat: 32.98, zj: "+36919万", sector: "光通信/CPO" },
-  { name: "新易盛", change: 9.58, heat: 28.63, zj: "+34641万", sector: "光通信/CPO" },
-  { name: "中际旭创", change: 5.11, heat: 22.09, zj: "", sector: "光通信/CPO" },
-  { name: "赣锋锂业", change: -1.8, heat: 33.82, zj: "", sector: "锂电池" },
-  { name: "华友钴业", change: 0.46, heat: 30.91, zj: "", sector: "锂电池" },
-  { name: "天赐材料", change: -0.75, heat: 30.76, zj: "", sector: "锂电池" },
-  { name: "国轩高科", change: 1.13, heat: 14.6, zj: "", sector: "锂电池" },
-  { name: "亿纬锂能", change: -1.59, heat: 12.21, zj: "", sector: "锂电池" },
-  { name: "宁德时代", change: -2.15, heat: 4.48, zj: "", sector: "锂电池" },
-  { name: "中科曙光", change: 1.05, heat: 16.85, zj: "+30593万", sector: "人工智能" },
-  { name: "浪潮信息", change: -0.07, heat: 15.9, zj: "", sector: "人工智能" },
-  { name: "昆仑万维", change: 1.15, heat: 12.91, zj: "", sector: "人工智能" },
-  { name: "寒武纪", change: 2.07, heat: 7.99, zj: "", sector: "人工智能" },
-  { name: "中科创达", change: -0.32, heat: 4.26, zj: "", sector: "人工智能" },
-  { name: "科大讯飞", change: 0.29, heat: 3.61, zj: "", sector: "人工智能" },
-  { name: "驰宏锌锗", change: 5.48, heat: 13.7, zj: "+19813万", sector: "铜/有色" },
-  { name: "北方稀土", change: -0.34, heat: 11.55, zj: "", sector: "铜/有色" },
-  { name: "云南铜业", change: 1.12, heat: 5.88, zj: "", sector: "铜/有色" },
-  { name: "中国铝业", change: -0.86, heat: 4.81, zj: "", sector: "铜/有色" },
-  { name: "紫金矿业", change: -1.61, heat: 4.62, zj: "", sector: "铜/有色" },
-  { name: "江西铜业", change: -1.0, heat: 3.94, zj: "", sector: "铜/有色" },
-  { name: "卓胜微", change: 2.45, heat: 24.34, zj: "", sector: "半导体" },
-  { name: "长电科技", change: 0.57, heat: 11.5, zj: "", sector: "半导体" },
-  { name: "中芯国际", change: 1.01, heat: 10.5, zj: "+17760万", sector: "半导体" },
-  { name: "北方华创", change: -0.77, heat: 5.09, zj: "", sector: "半导体" },
-  { name: "豪威集团", change: -0.71, heat: 3.87, zj: "", sector: "半导体" },
-  { name: "瑞芯微", change: -0.03, heat: 3.07, zj: "", sector: "半导体" },
-  { name: "贵州茅台", change: -3.8, heat: 3.93, zj: "", sector: "白酒" },
-  { name: "舍得酒业", change: -2.15, heat: 2.07, zj: "", sector: "白酒" },
-  { name: "泸州老窖", change: -1.8, heat: 1.5, zj: "", sector: "白酒" },
-  { name: "五 粮 液", change: -1.53, heat: 1.26, zj: "", sector: "白酒" },
-  { name: "古井贡酒", change: -1.4, heat: 0.68, zj: "", sector: "白酒" },
-  { name: "山西汾酒", change: -1.18, heat: 0.66, zj: "", sector: "白酒" },
-  { name: "立讯精密", change: -1.16, heat: 8.24, zj: "", sector: "消费电子" },
-  { name: "格力电器", change: -0.99, heat: 1.96, zj: "", sector: "消费电子" },
-  { name: "海尔智家", change: -1.0, heat: 1.67, zj: "", sector: "消费电子" },
-  { name: "美的集团", change: 0.96, heat: 1.26, zj: "", sector: "消费电子" },
-  { name: "科沃斯", change: -0.75, heat: 0.81, zj: "", sector: "消费电子" },
-  { name: "老板电器", change: -0.65, heat: 0.27, zj: "", sector: "消费电子" },
-  { name: "阳光电源", change: -0.86, heat: 18.51, zj: "", sector: "光伏" },
-  { name: "爱旭股份", change: 1.85, heat: 4.49, zj: "", sector: "光伏" },
-  { name: "隆基绿能", change: -0.4, heat: 4.25, zj: "", sector: "光伏" },
-  { name: "晶澳科技", change: 0.37, heat: 2.48, zj: "", sector: "光伏" },
-  { name: "天合光能", change: 0.12, heat: 2.4, zj: "", sector: "光伏" },
-  { name: "通威股份", change: 0.11, heat: 2.16, zj: "", sector: "光伏" },
-  { name: "中国平安", change: -1.03, heat: 2.07, zj: "", sector: "金融" },
-  { name: "建设银行", change: -0.42, heat: 1.31, zj: "", sector: "金融" },
-  { name: "招商银行", change: -0.98, heat: 1.0, zj: "+15774万", sector: "金融" },
-  { name: "农业银行", change: 0.86, heat: 0.36, zj: "", sector: "金融" },
-  { name: "中国人寿", change: -0.92, heat: 0.16, zj: "", sector: "金融" },
-  { name: "工商银行", change: -0.27, heat: 0.15, zj: "", sector: "金融" },
-  { name: "广联航空", change: 5.14, heat: 88.79, zj: "+24133万", sector: "低空经济" },
-  { name: "海特高新", change: 5.29, heat: 38.5, zj: "+14959万", sector: "低空经济" },
-  { name: "北斗星通", change: 0.26, heat: 4.18, zj: "", sector: "低空经济" },
-  { name: "海康威视", change: -1.22, heat: 2.95, zj: "", sector: "低空经济" },
-  { name: "中信海直", change: 0.83, heat: 2.6, zj: "", sector: "低空经济" },
-  { name: "航发动力", change: -1.7, heat: 2.41, zj: "", sector: "低空经济" },
-  { name: "恒瑞医药", change: -1.98, heat: 3.64, zj: "", sector: "医药" },
-  { name: "迈瑞医疗", change: -2.31, heat: 2.05, zj: "", sector: "医药" },
-  { name: "乐普医疗", change: -1.74, heat: 2.04, zj: "", sector: "医药" },
-  { name: "复星医药", change: -2.06, heat: 1.81, zj: "", sector: "医药" },
-  { name: "长春高新", change: -0.78, heat: 1.54, zj: "", sector: "医药" },
-  { name: "云南白药", change: -0.41, heat: 0.59, zj: "", sector: "医药" },
-  { name: "中国核电", change: -0.8, heat: 1.41, zj: "", sector: "电力" },
-  { name: "华电国际", change: -0.43, heat: 1.34, zj: "", sector: "电力" },
-  { name: "华能国际", change: -0.72, heat: 1.19, zj: "", sector: "电力" },
-  { name: "长江电力", change: -0.64, heat: 1.08, zj: "", sector: "电力" },
-  { name: "国电电力", change: -0.21, heat: 0.99, zj: "", sector: "电力" },
-  { name: "浙能电力", change: -0.54, heat: 0.31, zj: "", sector: "电力" },
-];
+// ===== 数据 =====
+const sectors = [{"name": "电子", "code": "BK1201", "change": 1.85, "heat": 9.09, "main": 45.68, "amount": 5082.56, "turnover": 3.61, "cls": "up-l", "span": 4, "stocks": [{"name": "胜宏科技", "change": 7.55, "heat": 128.13, "zj": 107797.66, "cls": "up-h", "span": 1}, {"name": "工业富联", "change": 2.78, "heat": 14.85, "zj": 103279.21, "cls": "up-l", "span": 1}, {"name": "三安光电", "change": 9.98, "heat": 146.11, "zj": 93232.31, "cls": "up-h", "span": 2}, {"name": "信维通信", "change": 7.32, "heat": 237.91, "zj": 88347.16, "cls": "up-h", "span": 3}, {"name": "赛微电子", "change": 6.37, "heat": 266.73, "zj": 55912.84, "cls": "up-m", "span": 3}, {"name": "沪电股份", "change": 3.45, "heat": 72.67, "zj": 52657.4, "cls": "up-m", "span": 1}, {"name": "合力泰", "change": 9.84, "heat": 119.14, "zj": 43636.5, "cls": "up-h", "span": 1}, {"name": "景旺电子", "change": 4.5, "heat": 77.54, "zj": 40604.44, "cls": "up-m", "span": 1}, {"name": "深南电路", "change": 4.78, "heat": 29.63, "zj": 35989.59, "cls": "up-m", "span": 1}, {"name": "凯盛科技", "change": 10.04, "heat": 170.96, "zj": 33965.1, "cls": "up-h", "span": 2}, {"name": "晶方科技", "change": 5.15, "heat": 144.17, "zj": 31150.42, "cls": "up-m", "span": 2}, {"name": "天通股份", "change": 10.03, "heat": 52.37, "zj": 30738.83, "cls": "up-h", "span": 1}]}, {"name": "印制电路板", "code": "BK1340", "change": 2.85, "heat": 7.68, "main": 28.02, "amount": 983.07, "turnover": 5.36, "cls": "up-l", "span": 3, "stocks": [{"name": "胜宏科技", "change": 7.55, "heat": 128.13, "zj": 107797.66, "cls": "up-h", "span": 1}, {"name": "沪电股份", "change": 3.45, "heat": 72.67, "zj": 52657.4, "cls": "up-m", "span": 1}, {"name": "景旺电子", "change": 4.5, "heat": 77.54, "zj": 40604.44, "cls": "up-m", "span": 1}, {"name": "深南电路", "change": 4.78, "heat": 29.63, "zj": 35989.59, "cls": "up-m", "span": 1}, {"name": "东山精密", "change": 8.39, "heat": 136.26, "zj": 16633.55, "cls": "up-h", "span": 1}, {"name": "兴森科技", "change": 4.89, "heat": 133.12, "zj": 15931.32, "cls": "up-m", "span": 1}, {"name": "迅捷兴", "change": 5.96, "heat": 187.32, "zj": 12391.29, "cls": "up-m", "span": 2}, {"name": "金禄电子", "change": 2.09, "heat": 291.62, "zj": 9465.93, "cls": "up-l", "span": 3}, {"name": "广合科技", "change": 10.0, "heat": 96.14, "zj": 7635.07, "cls": "up-h", "span": 1}, {"name": "中京电子", "change": 2.57, "heat": 161.68, "zj": 7348.23, "cls": "up-l", "span": 2}, {"name": "万源通", "change": 6.77, "heat": 135.67, "zj": 6941.3, "cls": "up-m", "span": 1}, {"name": "华正新材", "change": 4.64, "heat": 110.53, "zj": 6150.26, "cls": "up-m", "span": 1}]}, {"name": "元件", "code": "BK0459", "change": 2.59, "heat": 7.72, "main": 27.3, "amount": 1088.72, "turnover": 5.0, "cls": "up-l", "span": 3, "stocks": [{"name": "胜宏科技", "change": 7.55, "heat": 128.13, "zj": 107797.66, "cls": "up-h", "span": 1}, {"name": "沪电股份", "change": 3.45, "heat": 72.67, "zj": 52657.4, "cls": "up-m", "span": 1}, {"name": "景旺电子", "change": 4.5, "heat": 77.54, "zj": 40604.44, "cls": "up-m", "span": 1}, {"name": "深南电路", "change": 4.78, "heat": 29.63, "zj": 35989.59, "cls": "up-m", "span": 1}, {"name": "泰晶科技", "change": 9.99, "heat": 239.15, "zj": 18700.6, "cls": "up-h", "span": 2}, {"name": "东山精密", "change": 8.39, "heat": 136.26, "zj": 16633.55, "cls": "up-h", "span": 1}, {"name": "兴森科技", "change": 4.89, "heat": 133.12, "zj": 15931.32, "cls": "up-m", "span": 1}, {"name": "迅捷兴", "change": 5.96, "heat": 187.32, "zj": 12391.29, "cls": "up-m", "span": 2}, {"name": "金禄电子", "change": 2.09, "heat": 291.62, "zj": 9465.93, "cls": "up-l", "span": 3}, {"name": "三环集团", "change": 0.15, "heat": 14.55, "zj": 9270.89, "cls": "up-xs", "span": 1}, {"name": "广合科技", "change": 10.0, "heat": 96.14, "zj": 7635.07, "cls": "up-h", "span": 1}, {"name": "中京电子", "change": 2.57, "heat": 161.68, "zj": 7348.23, "cls": "up-l", "span": 2}]}, {"name": "通信设备", "code": "BK0448", "change": 2.29, "heat": 8.27, "main": 25.29, "amount": 1925.84, "turnover": 5.53, "cls": "up-l", "span": 4, "stocks": [{"name": "光迅科技", "change": 10.0, "heat": 134.72, "zj": 96824.9, "cls": "up-h", "span": 2}, {"name": "亨通光电", "change": 4.72, "heat": 136.46, "zj": 80018.68, "cls": "up-m", "span": 2}, {"name": "剑桥科技", "change": 10.0, "heat": 142.44, "zj": 64123.14, "cls": "up-h", "span": 2}, {"name": "长芯博创", "change": 7.79, "heat": 136.66, "zj": 56354.31, "cls": "up-h", "span": 2}, {"name": "天孚通信", "change": 6.67, "heat": 91.96, "zj": 36918.66, "cls": "up-m", "span": 1}, {"name": "新易盛", "change": 9.58, "heat": 76.73, "zj": 34640.72, "cls": "up-h", "span": 1}, {"name": "德科立", "change": 6.27, "heat": 161.6, "zj": 27770.55, "cls": "up-m", "span": 2}, {"name": "共进股份", "change": 10.0, "heat": 145.2, "zj": 27712.4, "cls": "up-h", "span": 2}, {"name": "东方通信", "change": 7.17, "heat": 131.42, "zj": 19947.7, "cls": "up-h", "span": 2}, {"name": "世嘉科技", "change": 10.0, "heat": 203.95, "zj": 18550.53, "cls": "up-h", "span": 2}, {"name": "太辰光", "change": 4.98, "heat": 252.69, "zj": 17771.55, "cls": "up-m", "span": 3}, {"name": "中瓷电子", "change": 10.0, "heat": 61.48, "zj": 14774.17, "cls": "up-h", "span": 1}]}, {"name": "通信网络设备及器件", "code": "BK1591", "change": 3.68, "heat": 7.98, "main": 24.87, "amount": 1366.05, "turnover": 4.71, "cls": "up-m", "span": 4, "stocks": [{"name": "光迅科技", "change": 10.0, "heat": 134.72, "zj": 96824.9, "cls": "up-h", "span": 1}, {"name": "长芯博创", "change": 7.79, "heat": 136.66, "zj": 56354.31, "cls": "up-h", "span": 1}, {"name": "天孚通信", "change": 6.67, "heat": 91.96, "zj": 36918.66, "cls": "up-m", "span": 1}, {"name": "新易盛", "change": 9.58, "heat": 76.73, "zj": 34640.72, "cls": "up-h", "span": 1}, {"name": "德科立", "change": 6.27, "heat": 161.6, "zj": 27770.55, "cls": "up-m", "span": 2}, {"name": "世嘉科技", "change": 10.0, "heat": 203.95, "zj": 18550.53, "cls": "up-h", "span": 2}, {"name": "太辰光", "change": 4.98, "heat": 252.69, "zj": 17771.55, "cls": "up-m", "span": 2}, {"name": "蘅东光", "change": 16.71, "heat": 168.66, "zj": 12704.19, "cls": "up-h", "span": 2}, {"name": "联特科技", "change": 7.81, "heat": 190.87, "zj": 9502.31, "cls": "up-h", "span": 2}, {"name": "锐捷网络", "change": 0.44, "heat": 14.55, "zj": 7686.85, "cls": "up-xs", "span": 1}, {"name": "通宇通讯", "change": 3.32, "heat": 309.81, "zj": 4084.81, "cls": "up-m", "span": 3}, {"name": "光库科技", "change": 8.99, "heat": 162.56, "zj": 4045.34, "cls": "up-h", "span": 2}]}, {"name": "光学光电子", "code": "BK1038", "change": 1.7, "heat": 6.93, "main": 19.61, "amount": 572.24, "turnover": 3.7, "cls": "up-l", "span": 3, "stocks": [{"name": "三安光电", "change": 9.98, "heat": 146.11, "zj": 93232.31, "cls": "up-h", "span": 2}, {"name": "合力泰", "change": 9.84, "heat": 119.14, "zj": 43636.5, "cls": "up-h", "span": 1}, {"name": "凯盛科技", "change": 10.04, "heat": 170.96, "zj": 33965.1, "cls": "up-h", "span": 2}, {"name": "沃格光电", "change": 10.0, "heat": 153.16, "zj": 25841.64, "cls": "up-h", "span": 2}, {"name": "彩虹股份", "change": 10.03, "heat": 52.22, "zj": 23551.17, "cls": "up-h", "span": 1}, {"name": "聚飞光电", "change": 5.69, "heat": 246.85, "zj": 22266.7, "cls": "up-m", "span": 3}, {"name": "光智科技", "change": 5.83, "heat": 227.09, "zj": 18857.74, "cls": "up-m", "span": 3}, {"name": "茂莱光学", "change": 16.33, "heat": 96.29, "zj": 17660.86, "cls": "up-h", "span": 1}, {"name": "腾景科技", "change": 4.6, "heat": 95.2, "zj": 13672.35, "cls": "up-m", "span": 1}, {"name": "东田微", "change": 6.84, "heat": 257.0, "zj": 9875.09, "cls": "up-m", "span": 3}, {"name": "华灿光电", "change": 3.32, "heat": 106.46, "zj": 9275.74, "cls": "up-m", "span": 1}, {"name": "戈碧迦", "change": 11.64, "heat": 88.7, "zj": 8062.44, "cls": "up-h", "span": 1}]}, {"name": "LED", "code": "BK1333", "change": 1.89, "heat": 6.1, "main": 15.17, "amount": 173.14, "turnover": 6.87, "cls": "up-l", "span": 3, "stocks": [{"name": "三安光电", "change": 9.98, "heat": 146.11, "zj": 93232.31, "cls": "up-h", "span": 2}, {"name": "聚飞光电", "change": 5.69, "heat": 246.85, "zj": 22266.7, "cls": "up-m", "span": 3}, {"name": "华灿光电", "change": 3.32, "heat": 106.46, "zj": 9275.74, "cls": "up-m", "span": 1}, {"name": "万润科技", "change": 2.41, "heat": 77.41, "zj": 7098.89, "cls": "up-l", "span": 1}, {"name": "乾照光电", "change": 1.45, "heat": 74.57, "zj": 6811.96, "cls": "up-l", "span": 1}, {"name": "光莆股份", "change": 7.18, "heat": 222.44, "zj": 6468.34, "cls": "up-h", "span": 3}, {"name": "利亚德", "change": 1.17, "heat": 68.24, "zj": 5461.85, "cls": "up-l", "span": 1}, {"name": "聚灿光电", "change": 2.92, "heat": 117.02, "zj": 4789.18, "cls": "up-l", "span": 1}, {"name": "瑞丰光电", "change": 2.5, "heat": 97.19, "zj": 2957.79, "cls": "up-l", "span": 1}, {"name": "雷曼光电", "change": 2.65, "heat": 121.46, "zj": 1580.82, "cls": "up-l", "span": 1}, {"name": "宝明科技", "change": 2.64, "heat": 16.93, "zj": 611.59, "cls": "up-l", "span": 1}, {"name": "洲明科技", "change": 1.28, "heat": 35.08, "zj": 607.67, "cls": "up-l", "span": 1}]}, {"name": "其他小金属", "code": "BK1624", "change": 1.61, "heat": 5.89, "main": 14.07, "amount": 164.43, "turnover": 4.61, "cls": "up-l", "span": 3, "stocks": [{"name": "云南锗业", "change": 10.01, "heat": 271.15, "zj": 124157.21, "cls": "up-h", "span": 3}, {"name": "锡业股份", "change": 0.48, "heat": 43.32, "zj": 16107.66, "cls": "up-xs", "span": 1}, {"name": "东方钽业", "change": 0.95, "heat": 53.48, "zj": 5683.2, "cls": "up-xs", "span": 1}, {"name": "华锡有色", "change": -0.88, "heat": 44.4, "zj": 2958.72, "cls": "down-xs", "span": 1}, {"name": "东方锆业", "change": 1.47, "heat": 29.3, "zj": 1422.09, "cls": "up-l", "span": 1}, {"name": "贵研铂业", "change": 0.62, "heat": 20.5, "zj": 991.33, "cls": "up-xs", "span": 1}, {"name": "天工股份", "change": 5.04, "heat": 71.69, "zj": 889.73, "cls": "up-m", "span": 1}, {"name": "浩通科技", "change": 1.17, "heat": 35.73, "zj": 848.65, "cls": "up-l", "span": 1}, {"name": "华阳新材", "change": 1.27, "heat": 19.65, "zj": 118.14, "cls": "up-l", "span": 1}, {"name": "金天钛业", "change": 1.9, "heat": 17.89, "zj": -180.86, "cls": "up-l", "span": 1}, {"name": "安宁股份", "change": 0.74, "heat": 8.0, "zj": -206.18, "cls": "up-xs", "span": 1}, {"name": "宝武镁业", "change": -0.36, "heat": 18.03, "zj": -788.5, "cls": "down-xs", "span": 1}]}, {"name": "风电设备", "code": "BK1032", "change": 1.9, "heat": 6.13, "main": 13.38, "amount": 220.88, "turnover": 5.13, "cls": "up-l", "span": 3, "stocks": [{"name": "禾望电气", "change": 9.99, "heat": 234.21, "zj": 44118.6, "cls": "up-h", "span": 3}, {"name": "大金重工", "change": 10.0, "heat": 33.22, "zj": 27838.83, "cls": "up-h", "span": 1}, {"name": "明阳智能", "change": 2.48, "heat": 58.54, "zj": 18289.72, "cls": "up-l", "span": 1}, {"name": "金风科技", "change": 1.6, "heat": 72.01, "zj": 17719.06, "cls": "up-l", "span": 1}, {"name": "天顺风能", "change": 3.7, "heat": 58.36, "zj": 9346.89, "cls": "up-m", "span": 1}, {"name": "通裕重工", "change": 2.17, "heat": 73.18, "zj": 5842.72, "cls": "up-l", "span": 1}, {"name": "飞沃科技", "change": 1.76, "heat": 202.65, "zj": 5645.47, "cls": "up-l", "span": 3}, {"name": "天能重工", "change": 4.22, "heat": 106.93, "zj": 4889.09, "cls": "up-m", "span": 1}, {"name": "泰胜风能", "change": 4.0, "heat": 95.74, "zj": 4179.38, "cls": "up-m", "span": 1}, {"name": "振江股份", "change": -1.74, "heat": 90.99, "zj": 4097.15, "cls": "down-l", "span": 1}, {"name": "吉鑫科技", "change": 3.16, "heat": 127.88, "zj": 3842.32, "cls": "up-m", "span": 2}, {"name": "双一科技", "change": 4.01, "heat": 174.89, "zj": 3386.1, "cls": "up-m", "span": 2}]}, {"name": "半导体材料", "code": "BK1325", "change": 4.29, "heat": 6.04, "main": 11.47, "amount": 190.87, "turnover": 4.1, "cls": "up-m", "span": 3, "stocks": [{"name": "珂玛科技", "change": 4.04, "heat": 187.97, "zj": 29542.99, "cls": "up-m", "span": 1}, {"name": "先导基电", "change": 10.01, "heat": 91.65, "zj": 21751.85, "cls": "up-h", "span": 1}, {"name": "康强电子", "change": 3.85, "heat": 237.43, "zj": 17912.27, "cls": "up-m", "span": 2}, {"name": "欧莱新材", "change": 13.03, "heat": 460.74, "zj": 10763.64, "cls": "up-h", "span": 3}, {"name": "凯德石英", "change": 20.74, "heat": 237.27, "zj": 9178.15, "cls": "up-h", "span": 2}, {"name": "有研新材", "change": 4.3, "heat": 89.24, "zj": 8164.57, "cls": "up-m", "span": 1}, {"name": "强一股份", "change": 11.1, "heat": 215.13, "zj": 5745.28, "cls": "up-h", "span": 1}, {"name": "中船特气", "change": 1.26, "heat": 138.0, "zj": 5714.23, "cls": "up-l", "span": 1}, {"name": "立昂微", "change": 2.09, "heat": 26.23, "zj": 4141.48, "cls": "up-l", "span": 1}, {"name": "阿石创", "change": 3.03, "heat": 132.52, "zj": 3932.06, "cls": "up-m", "span": 1}, {"name": "路维光电", "change": 4.56, "heat": 37.33, "zj": 3286.5, "cls": "up-m", "span": 1}, {"name": "沪硅产业", "change": 1.57, "heat": 14.98, "zj": 2684.49, "cls": "up-l", "span": 1}]}, {"name": "机械设备", "code": "BK1205", "change": 1.3, "heat": 7.86, "main": 10.7, "amount": 1859.84, "turnover": 2.54, "cls": "up-l", "span": 3, "stocks": [{"name": "罗博特科", "change": 5.55, "heat": 90.08, "zj": 47724.35, "cls": "up-m", "span": 1}, {"name": "创世纪", "change": 14.27, "heat": 246.13, "zj": 44709.6, "cls": "up-h", "span": 1}, {"name": "巨力索具", "change": 2.97, "heat": 328.68, "zj": 22148.17, "cls": "up-l", "span": 1}, {"name": "芯碁微装", "change": 1.74, "heat": 81.81, "zj": 21220.37, "cls": "up-l", "span": 1}, {"name": "川润股份", "change": 3.47, "heat": 374.21, "zj": 20640.82, "cls": "up-m", "span": 2}, {"name": "英维克", "change": 4.23, "heat": 97.23, "zj": 20115.73, "cls": "up-m", "span": 1}, {"name": "昊志机电", "change": 5.18, "heat": 152.75, "zj": 18223.13, "cls": "up-m", "span": 1}, {"name": "科瑞技术", "change": 10.0, "heat": 83.6, "zj": 17612.61, "cls": "up-h", "span": 1}, {"name": "泰金新能", "change": 15.71, "heat": 720.69, "zj": 17597.43, "cls": "up-h", "span": 3}, {"name": "航天工程", "change": 8.48, "heat": 178.31, "zj": 16625.56, "cls": "up-h", "span": 1}, {"name": "航天动力", "change": 1.11, "heat": 99.1, "zj": 12262.36, "cls": "up-l", "span": 1}, {"name": "智立方", "change": -0.29, "heat": 204.88, "zj": 11329.81, "cls": "down-xs", "span": 1}]}, {"name": "电子化学品Ⅲ", "code": "BK1332", "change": 3.64, "heat": 6.11, "main": 10.36, "amount": 219.38, "turnover": 4.38, "cls": "up-m", "span": 3, "stocks": [{"name": "天通股份", "change": 10.03, "heat": 52.37, "zj": 30738.83, "cls": "up-h", "span": 1}, {"name": "南大光电", "change": 3.04, "heat": 90.67, "zj": 19154.19, "cls": "up-m", "span": 1}, {"name": "国瓷材料", "change": 2.58, "heat": 67.34, "zj": 15276.37, "cls": "up-l", "span": 1}, {"name": "创达新材", "change": 30.0, "heat": 847.43, "zj": 7448.52, "cls": "up-h", "span": 3}, {"name": "鼎龙股份", "change": 2.36, "heat": 53.28, "zj": 6982.72, "cls": "up-l", "span": 1}, {"name": "天承科技", "change": 3.39, "heat": 177.41, "zj": 6481.49, "cls": "up-m", "span": 1}, {"name": "金宏气体", "change": -0.58, "heat": 94.65, "zj": 6018.06, "cls": "down-xs", "span": 1}, {"name": "晶瑞电材", "change": 1.93, "heat": 42.69, "zj": 5637.46, "cls": "up-l", "span": 1}, {"name": "广钢气体", "change": -2.65, "heat": 34.37, "zj": 5064.78, "cls": "down-l", "span": 1}, {"name": "思泉新材", "change": 5.01, "heat": 139.72, "zj": 4884.07, "cls": "up-m", "span": 1}, {"name": "容大感光", "change": 1.98, "heat": 50.96, "zj": 4707.84, "cls": "up-l", "span": 1}, {"name": "凯华材料", "change": 29.95, "heat": 134.24, "zj": 4337.47, "cls": "up-h", "span": 1}]}, {"name": "电子化学品Ⅱ", "code": "BK1039", "change": 3.64, "heat": 6.11, "main": 10.36, "amount": 219.38, "turnover": 4.38, "cls": "up-m", "span": 3, "stocks": [{"name": "天通股份", "change": 10.03, "heat": 52.37, "zj": 30738.83, "cls": "up-h", "span": 1}, {"name": "南大光电", "change": 3.04, "heat": 90.67, "zj": 19154.19, "cls": "up-m", "span": 1}, {"name": "国瓷材料", "change": 2.58, "heat": 67.34, "zj": 15276.37, "cls": "up-l", "span": 1}, {"name": "创达新材", "change": 30.0, "heat": 847.43, "zj": 7448.52, "cls": "up-h", "span": 3}, {"name": "鼎龙股份", "change": 2.36, "heat": 53.28, "zj": 6982.72, "cls": "up-l", "span": 1}, {"name": "天承科技", "change": 3.39, "heat": 177.41, "zj": 6481.49, "cls": "up-m", "span": 1}, {"name": "金宏气体", "change": -0.58, "heat": 94.65, "zj": 6018.06, "cls": "down-xs", "span": 1}, {"name": "晶瑞电材", "change": 1.93, "heat": 42.69, "zj": 5637.46, "cls": "up-l", "span": 1}, {"name": "广钢气体", "change": -2.65, "heat": 34.37, "zj": 5064.78, "cls": "down-l", "span": 1}, {"name": "思泉新材", "change": 5.01, "heat": 139.72, "zj": 4884.07, "cls": "up-m", "span": 1}, {"name": "容大感光", "change": 1.98, "heat": 50.96, "zj": 4707.84, "cls": "up-l", "span": 1}, {"name": "凯华材料", "change": 29.95, "heat": 134.24, "zj": 4337.47, "cls": "up-h", "span": 1}]}, {"name": "风电零部件", "code": "BK1313", "change": 1.83, "heat": 5.79, "main": 10.21, "amount": 151.54, "turnover": 6.04, "cls": "up-l", "span": 3, "stocks": [{"name": "禾望电气", "change": 9.99, "heat": 234.21, "zj": 44118.6, "cls": "up-h", "span": 3}, {"name": "大金重工", "change": 10.0, "heat": 33.22, "zj": 27838.83, "cls": "up-h", "span": 1}, {"name": "天顺风能", "change": 3.7, "heat": 58.36, "zj": 9346.89, "cls": "up-m", "span": 1}, {"name": "通裕重工", "change": 2.17, "heat": 73.18, "zj": 5842.72, "cls": "up-l", "span": 1}, {"name": "飞沃科技", "change": 1.76, "heat": 202.65, "zj": 5645.47, "cls": "up-l", "span": 3}, {"name": "天能重工", "change": 4.22, "heat": 106.93, "zj": 4889.09, "cls": "up-m", "span": 1}, {"name": "泰胜风能", "change": 4.0, "heat": 95.74, "zj": 4179.38, "cls": "up-m", "span": 1}, {"name": "振江股份", "change": -1.74, "heat": 90.99, "zj": 4097.15, "cls": "down-l", "span": 1}, {"name": "吉鑫科技", "change": 3.16, "heat": 127.88, "zj": 3842.32, "cls": "up-m", "span": 2}, {"name": "双一科技", "change": 4.01, "heat": 174.89, "zj": 3386.1, "cls": "up-m", "span": 2}, {"name": "金雷股份", "change": 3.44, "heat": 85.17, "zj": 3094.73, "cls": "up-m", "span": 1}, {"name": "新强联", "change": 0.57, "heat": 61.58, "zj": 916.07, "cls": "up-xs", "span": 1}]}, {"name": "锂电专用设备", "code": "BK1304", "change": 4.11, "heat": 5.71, "main": 10.13, "amount": 125.42, "turnover": 5.11, "cls": "up-m", "span": 3, "stocks": [{"name": "N尚水", "change": 286.72, "heat": 4691.56, "zj": 51784.53, "cls": "up-h", "span": 3}, {"name": "先导智能", "change": 4.36, "heat": 93.24, "zj": 45789.56, "cls": "up-m", "span": 1}, {"name": "纳科诺尔", "change": 15.1, "heat": 103.7, "zj": 7988.07, "cls": "up-h", "span": 1}, {"name": "赢合科技", "change": 2.71, "heat": 39.82, "zj": 2491.68, "cls": "up-l", "span": 1}, {"name": "利元亨", "change": 5.4, "heat": 57.35, "zj": 1894.16, "cls": "up-m", "span": 1}, {"name": "德新科技", "change": 2.75, "heat": 137.56, "zj": 1786.05, "cls": "up-l", "span": 1}, {"name": "骄成超声", "change": 2.42, "heat": 19.25, "zj": 1768.26, "cls": "up-l", "span": 1}, {"name": "杭可科技", "change": 5.15, "heat": 43.6, "zj": 1154.32, "cls": "up-m", "span": 1}, {"name": "誉辰智能", "change": 4.97, "heat": 69.01, "zj": 989.31, "cls": "up-m", "span": 1}, {"name": "ST福能", "change": 1.62, "heat": 18.23, "zj": 907.0, "cls": "up-l", "span": 1}, {"name": "武汉蓝电", "change": 5.15, "heat": 156.97, "zj": 384.72, "cls": "up-m", "span": 1}, {"name": "昆工科技", "change": 4.59, "heat": 31.37, "zj": 242.44, "cls": "up-m", "span": 1}]}, {"name": "自动化设备", "code": "BK1237", "change": 2.01, "heat": 6.67, "main": 8.27, "amount": 483.41, "turnover": 3.98, "cls": "up-l", "span": 3, "stocks": [{"name": "罗博特科", "change": 5.55, "heat": 90.08, "zj": 47724.35, "cls": "up-m", "span": 1}, {"name": "创世纪", "change": 14.27, "heat": 246.13, "zj": 44709.6, "cls": "up-h", "span": 3}, {"name": "科瑞技术", "change": 10.0, "heat": 83.6, "zj": 17612.61, "cls": "up-h", "span": 1}, {"name": "智立方", "change": -0.29, "heat": 204.88, "zj": 11329.81, "cls": "down-xs", "span": 2}, {"name": "中控技术", "change": 1.57, "heat": 24.49, "zj": 10841.86, "cls": "up-l", "span": 1}, {"name": "博杰股份", "change": 10.0, "heat": 181.36, "zj": 10652.45, "cls": "up-h", "span": 2}, {"name": "华工科技", "change": 3.88, "heat": 138.38, "zj": 9485.74, "cls": "up-m", "span": 2}, {"name": "快克智能", "change": 10.01, "heat": 45.16, "zj": 7496.64, "cls": "up-h", "span": 1}, {"name": "劲拓股份", "change": 1.64, "heat": 111.45, "zj": 5773.9, "cls": "up-l", "span": 1}, {"name": "赛腾股份", "change": 2.8, "heat": 73.27, "zj": 4987.1, "cls": "up-l", "span": 1}, {"name": "锐科激光", "change": 6.9, "heat": 107.33, "zj": 4098.74, "cls": "up-m", "span": 1}, {"name": "大豪科技", "change": 3.09, "heat": 21.05, "zj": 3563.64, "cls": "up-m", "span": 1}]}, {"name": "小金属", "code": "BK1027", "change": 1.51, "heat": 6.76, "main": 8.03, "amount": 512.4, "turnover": 5.03, "cls": "up-l", "span": 3, "stocks": [{"name": "云南锗业", "change": 10.01, "heat": 271.15, "zj": 124157.21, "cls": "up-h", "span": 3}, {"name": "盛和资源", "change": 3.03, "heat": 73.84, "zj": 26486.42, "cls": "up-m", "span": 1}, {"name": "锡业股份", "change": 0.48, "heat": 43.32, "zj": 16107.66, "cls": "up-xs", "span": 1}, {"name": "中钨高新", "change": 8.13, "heat": 203.66, "zj": 13620.68, "cls": "up-h", "span": 2}, {"name": "中稀有色", "change": 1.92, "heat": 62.39, "zj": 6353.43, "cls": "up-l", "span": 1}, {"name": "东方钽业", "change": 0.95, "heat": 53.48, "zj": 5683.2, "cls": "up-xs", "span": 1}, {"name": "华锡有色", "change": -0.88, "heat": 44.4, "zj": 2958.72, "cls": "down-xs", "span": 1}, {"name": "中国稀土", "change": 0.81, "heat": 25.66, "zj": 2147.96, "cls": "up-xs", "span": 1}, {"name": "东方锆业", "change": 1.47, "heat": 29.3, "zj": 1422.09, "cls": "up-l", "span": 1}, {"name": "贵研铂业", "change": 0.62, "heat": 20.5, "zj": 991.33, "cls": "up-xs", "span": 1}, {"name": "天工股份", "change": 5.04, "heat": 71.69, "zj": 889.73, "cls": "up-m", "span": 1}, {"name": "浩通科技", "change": 1.17, "heat": 35.73, "zj": 848.65, "cls": "up-l", "span": 1}]}, {"name": "消费电子零部件及组装", "code": "BK1338", "change": 1.36, "heat": 7.02, "main": 7.74, "amount": 795.76, "turnover": 2.66, "cls": "up-l", "span": 3, "stocks": [{"name": "工业富联", "change": 2.78, "heat": 14.85, "zj": 103279.21, "cls": "up-l", "span": 1}, {"name": "信维通信", "change": 7.32, "heat": 237.91, "zj": 88347.16, "cls": "up-h", "span": 2}, {"name": "环旭电子", "change": 5.88, "heat": 41.19, "zj": 25752.91, "cls": "up-m", "span": 1}, {"name": "传艺科技", "change": 10.0, "heat": 363.89, "zj": 18730.41, "cls": "up-h", "span": 3}, {"name": "胜蓝股份", "change": 1.75, "heat": 88.12, "zj": 7547.68, "cls": "up-l", "span": 1}, {"name": "利通电子", "change": 10.01, "heat": 208.23, "zj": 6420.95, "cls": "up-h", "span": 2}, {"name": "电连技术", "change": -0.21, "heat": 71.87, "zj": 6011.45, "cls": "down-xs", "span": 1}, {"name": "光弘科技", "change": 7.15, "heat": 44.97, "zj": 4212.41, "cls": "up-h", "span": 1}, {"name": "联创光电", "change": 2.61, "heat": 29.83, "zj": 3140.34, "cls": "up-l", "span": 1}, {"name": "福立旺", "change": 6.85, "heat": 166.07, "zj": 2706.89, "cls": "up-m", "span": 1}, {"name": "领益智造", "change": 0.36, "heat": 12.66, "zj": 1978.6, "cls": "up-xs", "span": 1}, {"name": "福蓉科技", "change": 1.7, "heat": 79.75, "zj": 1874.55, "cls": "up-l", "span": 1}]}, {"name": "专用设备", "code": "BK0910", "change": 1.15, "heat": 6.53, "main": 7.0, "amount": 508.27, "turnover": 2.13, "cls": "up-l", "span": 3, "stocks": [{"name": "芯碁微装", "change": 1.74, "heat": 81.81, "zj": 21220.37, "cls": "up-l", "span": 1}, {"name": "英维克", "change": 4.23, "heat": 97.23, "zj": 20115.73, "cls": "up-m", "span": 1}, {"name": "泰金新能", "change": 15.71, "heat": 720.69, "zj": 17597.43, "cls": "up-h", "span": 3}, {"name": "航天工程", "change": 8.48, "heat": 178.31, "zj": 16625.56, "cls": "up-h", "span": 1}, {"name": "强瑞技术", "change": -3.41, "heat": 103.26, "zj": 8947.08, "cls": "down-m", "span": 1}, {"name": "江钨装备", "change": 1.81, "heat": 80.26, "zj": 8559.57, "cls": "up-l", "span": 1}, {"name": "三佳科技", "change": 10.01, "heat": 107.08, "zj": 7011.54, "cls": "up-h", "span": 1}, {"name": "杰瑞股份", "change": 4.2, "heat": 54.98, "zj": 6950.51, "cls": "up-m", "span": 1}, {"name": "江顺科技", "change": 10.0, "heat": 243.17, "zj": 6326.96, "cls": "up-h", "span": 1}, {"name": "利和兴", "change": 1.98, "heat": 136.01, "zj": 6225.29, "cls": "up-l", "span": 1}, {"name": "大族数控", "change": 3.33, "heat": 16.25, "zj": 5621.31, "cls": "up-m", "span": 1}, {"name": "卓郎智能", "change": 3.83, "heat": 106.89, "zj": 5092.55, "cls": "up-m", "span": 1}]}, {"name": "塑料", "code": "BK0454", "change": 2.19, "heat": 6.49, "main": 6.83, "amount": 334.41, "turnover": 7.08, "cls": "up-l", "span": 3, "stocks": [{"name": "沧州明珠", "change": 10.06, "heat": 241.25, "zj": 36129.83, "cls": "up-h", "span": 3}, {"name": "佛塑科技", "change": 6.54, "heat": 173.92, "zj": 28648.07, "cls": "up-m", "span": 2}, {"name": "东材科技", "change": 8.0, "heat": 140.65, "zj": 26661.29, "cls": "up-h", "span": 2}, {"name": "斯迪克", "change": 20.0, "heat": 177.04, "zj": 15050.39, "cls": "up-h", "span": 2}, {"name": "华润材料", "change": 16.26, "heat": 74.24, "zj": 9204.7, "cls": "up-h", "span": 1}, {"name": "横河精密", "change": 5.7, "heat": 118.52, "zj": 9015.25, "cls": "up-m", "span": 1}, {"name": "圣泉集团", "change": 5.35, "heat": 75.54, "zj": 8396.51, "cls": "up-m", "span": 1}, {"name": "金发科技", "change": 1.47, "heat": 28.04, "zj": 7125.51, "cls": "up-l", "span": 1}, {"name": "和顺科技", "change": 20.0, "heat": 110.12, "zj": 4733.55, "cls": "up-h", "span": 1}, {"name": "星辉环材", "change": 4.12, "heat": 88.1, "zj": 3803.54, "cls": "up-m", "span": 1}, {"name": "上纬新材", "change": 6.15, "heat": 22.85, "zj": 3326.58, "cls": "up-m", "span": 1}, {"name": "乐凯胶片", "change": 1.09, "heat": 68.94, "zj": 3255.56, "cls": "up-l", "span": 1}]}];
 
-// ========== 渲染云图 ==========
-function getCls(c) {
-  if (c >= 7) return 'up-h';
-  if (c >= 3) return 'up-m';
-  if (c >= 1) return 'up-l';
-  if (c > 0) return 'up-xs';
-  if (c === 0) return 'flat';
-  if (c > -1) return 'down-xs';
-  if (c > -3) return 'down-l';
-  if (c > -5) return 'down-m';
-  return 'down-h';
+// ===== 渲染板块视图 =====
+function renderSectors() {
+  const grid = document.getElementById('sectorGrid');
+  grid.innerHTML = '';
+  const maxH = Math.max(...sectors.map(s=>s.heat));
+  
+  sectors.forEach((s, idx) => {
+    const div = document.createElement('div');
+    div.className = 'sector-block ' + s.cls;
+    div.style.flexGrow = Math.max(1, (s.heat / maxH) * 5);
+    div.style.minWidth = '80px';
+    div.style.minHeight = '70px';
+    div.onclick = () => showStocks(idx);
+    
+    const mainText = s.main > 0 ? `🔴+主力${s.main}亿` : (s.main < 0 ? `🔵主力${s.main}亿` : '');
+    div.innerHTML = `
+      <div class="sector-name">${s.name}</div>
+      <div class="sector-change">${s.change>0?'+':''}${s.change}%</div>
+      <div class="sector-meta">成交${s.amount}亿 ${mainText}</div>
+      <div class="sector-hint">点击查看${s.stocks.length}只成分股 →</div>
+    `;
+    grid.appendChild(div);
+  });
 }
 
-const maxH = Math.max(...stocks.map(s=>s.heat));
-const grid = document.getElementById('grid');
+// ===== 渲染个股视图 =====
+function showStocks(sectorIdx) {
+  const s = sectors[sectorIdx];
+  document.getElementById('sectorView').classList.remove('active');
+  document.getElementById('stockView').classList.add('active');
+  
+  document.getElementById('stockTitle').textContent = s.name + ' 成分股';
+  const mainText = s.main > 0 ? `主力流入+¥${s.main}亿` : (s.main < 0 ? `主力流出¥${Math.abs(s.main)}亿` : '主力流入: 平');
+  document.getElementById('stockMeta').textContent = `板块涨跌: ${s.change>0?'+':''}${s.change}% | ${mainText} | 成交额¥${s.amount}亿`;
+  
+  const grid = document.getElementById('stockGrid');
+  grid.innerHTML = '';
+  const maxH = Math.max(...s.stocks.map(st=>st.heat));
+  
+  s.stocks.forEach(st => {
+    const div = document.createElement('div');
+    div.className = 'stock-block ' + st.cls;
+    div.style.flexGrow = Math.max(1, (st.heat / maxH) * 4);
+    div.style.minWidth = '70px';
+    const zjText = st.zj ? `<div class="stock-zj">💵${st.zj>0?'+':''}${st.zj}万</div>` : '';
+    div.innerHTML = `
+      <div class="stock-name">${st.name}</div>
+      <div class="stock-change">${st.change>0?'+':''}${st.change}%</div>
+      ${zjText}
+    `;
+    grid.appendChild(div);
+  });
+}
 
-stocks.forEach(s => {
-  const div = document.createElement('div');
-  div.className = `block ${getCls(s.change)}`;
-  const span = Math.max(1, Math.round((s.heat / maxH) * 3));
-  div.style.gridColumn = `span ${span}`;
-  div.style.gridRow = `span ${span >= 2 ? 2 : 1}`;
-  const zjText = s.zj ? `<div class="zj">💵${s.zj}</div>` : '';
-  div.innerHTML = `<div class="name">${s.name}</div><div class="change">${s.change>0?'+':''}${s.change}%</div>${zjText}`;
-  grid.appendChild(div);
-});
+function showSectors() {
+  document.getElementById('stockView').classList.remove('active');
+  document.getElementById('sectorView').classList.add('active');
+}
 
-// ========== 交易时间 & 自动刷新逻辑 ==========
-const REFRESH_INTERVAL = 60; // 秒
-
+// ===== 刷新控制 =====
+const REFRESH_INTERVAL = 60;
 function getMarketStatus() {
   const now = new Date();
-  const day = now.getDay(); // 0=周日, 6=周六
-  const h = now.getHours();
-  const m = now.getMinutes();
-  const time = h * 60 + m; // 分钟数
-
-  // 周末休市
-  if (day === 0 || day === 6) {
-    return { trading: false, status: 'holiday', label: '周末休市', reason: '周六/周日不开盘' };
-  }
-
-  // 交易时段判断 (A股: 9:30-11:30, 13:00-15:00)
-  const amStart = 9 * 60 + 30;  // 570
-  const amEnd = 11 * 60 + 30;   // 690
-  const pmStart = 13 * 60;      // 780
-  const pmEnd = 15 * 60;        // 900
-
-  if ((time >= amStart && time < amEnd) || (time >= pmStart && time < pmEnd)) {
-    return { trading: true, status: 'open', label: '交易中', reason: 'A股交易时段' };
-  }
-
-  // 盘前/盘后
-  return { trading: false, status: 'closed', label: '已收盘', reason: '非交易时段' };
+  const day = now.getDay();
+  const h = now.getHours(), m = now.getMinutes();
+  const time = h * 60 + m;
+  if (day === 0 || day === 6) return { trading: false, status: 'holiday', label: '周末休市' };
+  if ((time >= 570 && time < 690) || (time >= 780 && time < 900)) return { trading: true, status: 'open', label: '交易中' };
+  return { trading: false, status: 'closed', label: '已收盘' };
 }
-
-function formatTimeLeft(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  if (m > 0) return `${m}分${s}秒`;
-  return `${s}秒`;
-}
-
+function formatTimeLeft(s) { return s > 60 ? `${Math.floor(s/60)}分${s%60}秒` : `${s}秒`; }
 let countdown = REFRESH_INTERVAL;
 let timer = null;
-
 function updateUI() {
-  const market = getMarketStatus();
+  const m = getMarketStatus();
   const dot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const marketStatus = document.getElementById('marketStatus');
-  const countdownEl = document.getElementById('countdown');
-
-  // 更新市场状态
-  marketStatus.textContent = market.label;
-  marketStatus.className = 'market-status ' + market.status;
-
-  if (market.trading) {
-    dot.className = 'status-dot';
-    statusText.textContent = '自动刷新中';
-    countdownEl.textContent = formatTimeLeft(countdown);
-  } else {
-    dot.className = 'status-dot ' + (market.status === 'holiday' ? 'off' : 'paused');
-    statusText.textContent = market.reason;
-    countdownEl.textContent = '—';
-  }
+  const txt = document.getElementById('statusText');
+  const ms = document.getElementById('marketStatus');
+  const cd = document.getElementById('countdown');
+  ms.textContent = m.label;
+  ms.className = 'market-status ' + m.status;
+  if (m.trading) { dot.className = 'status-dot'; txt.textContent = '自动刷新中'; cd.textContent = formatTimeLeft(countdown); }
+  else { dot.className = 'status-dot ' + (m.status==='holiday'?'off':'paused'); txt.textContent = m.status==='holiday'?'周末休市':'非交易时段'; cd.textContent = '—'; }
 }
-
 function tick() {
-  const market = getMarketStatus();
-
-  if (market.trading) {
+  if (getMarketStatus().trading) {
     countdown--;
-    if (countdown <= 0) {
-      forceRefresh();
-      return;
-    }
+    if (countdown <= 0) { forceRefresh(); return; }
   }
-
   updateUI();
 }
-
 function forceRefresh() {
   countdown = REFRESH_INTERVAL;
   const url = new URL(window.location.href);
   url.searchParams.set('t', Date.now());
   window.location.href = url.toString();
 }
-
-// 初始化页面日期信息
 function initDateInfo() {
   const now = new Date();
-  const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-  document.getElementById('pageDate').textContent = `${todayStr} ${weekdays[now.getDay()]} | 主力流入越多 → 方块越大`;
-
-  // 数据日期：如果是交易日显示今天，否则显示上一交易日（简化处理：周五数据，周末显示周五）
-  const day = now.getDay();
-  let dataDay = new Date(now);
-  if (day === 0) dataDay.setDate(dataDay.getDate() - 2); // 周日 → 周五
-  else if (day === 6) dataDay.setDate(dataDay.getDate() - 1); // 周六 → 周五
-
-  const dataStr = `${dataDay.getFullYear()}-${String(dataDay.getMonth()+1).padStart(2,'0')}-${String(dataDay.getDate()).padStart(2,'0')}`;
-  const isHoliday = (day === 0 || day === 6);
-  const holidayNote = isHoliday ? ' | 今日休市，数据为上一交易日' : '';
-  document.getElementById('dataDate').textContent = `📅 数据日期：${dataStr}${holidayNote}`;
+  const wd = ['周日','周一','周二','周三','周四','周五','周六'];
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  let dd = new Date(now);
+  if (now.getDay()===0) dd.setDate(dd.getDate()-2);
+  else if (now.getDay()===6) dd.setDate(dd.getDate()-1);
+  const dataDay = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+  const isH = (now.getDay()===0 || now.getDay()===6);
+  document.getElementById('dataDate').textContent = `📅 数据日期：${dataDay} | 今日${today} ${wd[now.getDay()]}${isH?' 休市':''}`;
 }
 
-// 启动
+// ===== 启动 =====
+renderSectors();
 initDateInfo();
 updateUI();
 timer = setInterval(tick, 1000);
-
-// 页面可见性变化时暂停/恢复计时器（切后台不浪费资源）
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    clearInterval(timer);
-  } else {
-    timer = setInterval(tick, 1000);
-    updateUI();
-  }
+  if (document.hidden) clearInterval(timer);
+  else { timer = setInterval(tick, 1000); updateUI(); }
 });
 </script>
 </body>
