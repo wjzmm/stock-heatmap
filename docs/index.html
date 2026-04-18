@@ -15,7 +15,7 @@ body {
 }
 .header {
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .header h1 {
   font-size: 20px;
@@ -39,6 +39,84 @@ body {
   display: inline-block;
   padding: 2px 10px;
   border-radius: 10px;
+}
+.refresh-bar {
+  max-width: 900px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.refresh-bar .status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.refresh-bar .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+  box-shadow: 0 0 6px #4caf50;
+  animation: pulse 1.5s infinite;
+}
+.refresh-bar .status-dot.paused {
+  background: #ff9800;
+  box-shadow: 0 0 6px #ff9800;
+  animation: none;
+}
+.refresh-bar .status-dot.off {
+  background: #666;
+  box-shadow: none;
+  animation: none;
+}
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.refresh-bar .countdown {
+  font-family: "SF Mono", "Courier New", monospace;
+  color: #64b5f6;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 50px;
+  text-align: center;
+}
+.refresh-bar .market-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(76, 175, 80, 0.15);
+  color: #81c784;
+}
+.refresh-bar .market-status.closed {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ffb74d;
+}
+.refresh-bar .market-status.holiday {
+  background: rgba(244, 67, 54, 0.15);
+  color: #e57373;
+}
+.btn {
+  background: rgba(100, 181, 246, 0.15);
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  color: #64b5f6;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+.btn:hover {
+  background: rgba(100, 181, 246, 0.3);
 }
 .grid {
   display: grid;
@@ -122,10 +200,22 @@ body {
 <body>
 <div class="header">
   <h1>🔥 A股板块热度云图 - 主力版</h1>
-  <div class="subtitle">2026-04-18 | 主力流入越多 → 方块越大</div>
-  <div class="formula">热度 = 换手率 × 涨跌幅 × 成交额 × 主力系数</div>
-  <div class="date-info">📅 数据日期：2026-04-17（周五） | 今日 4/18 休市，数据为上一交易日</div>
+  <div class="subtitle" id="pageDate">加载中...</div>
+  <div class="formula">热度 = 换手率 × 涨跌幅 × 成交额 × 主力系数 | 颜色=涨跌 大小=热度</div>
+  <div class="date-info" id="dataDate">加载中...</div>
 </div>
+
+<div class="refresh-bar" id="refreshBar">
+  <div class="status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">交易中</span>
+  </div>
+  <div class="market-status" id="marketStatus">检测中...</div>
+  <span>下次刷新:</span>
+  <div class="countdown" id="countdown">60s</div>
+  <button class="btn" onclick="forceRefresh()">🔄 立即刷新</button>
+</div>
+
 <div class="grid" id="grid"></div>
 <div class="legend">
   <div class="legend-item"><div class="legend-box up-h"></div>>7%</div>
@@ -139,9 +229,11 @@ body {
   <div class="legend-item"><div class="legend-box down-h"></div><-7%</div>
 </div>
 <div class="footer">
-  数据源: 腾讯财经 + 东方财富主力流向 | 红色=涨 绿色=跌
+  数据源: 腾讯财经 + 东方财富主力流向 | 红色=涨 绿色=跌 | 自动刷新间隔: 60秒
 </div>
+
 <script>
+// ========== 数据区 ==========
 const stocks = [
   { name: "光迅科技", change: 10.0, heat: 42.78, zj: "+96825万", sector: "光通信/CPO" },
   { name: "长芯博创", change: 7.79, heat: 42.16, zj: "+56354万", sector: "光通信/CPO" },
@@ -217,6 +309,7 @@ const stocks = [
   { name: "浙能电力", change: -0.54, heat: 0.31, zj: "", sector: "电力" },
 ];
 
+// ========== 渲染云图 ==========
 function getCls(c) {
   if (c >= 7) return 'up-h';
   if (c >= 3) return 'up-m';
@@ -235,13 +328,129 @@ const grid = document.getElementById('grid');
 stocks.forEach(s => {
   const div = document.createElement('div');
   div.className = `block ${getCls(s.change)}`;
-  // grid spanning based on heat
   const span = Math.max(1, Math.round((s.heat / maxH) * 3));
   div.style.gridColumn = `span ${span}`;
   div.style.gridRow = `span ${span >= 2 ? 2 : 1}`;
   const zjText = s.zj ? `<div class="zj">💵${s.zj}</div>` : '';
   div.innerHTML = `<div class="name">${s.name}</div><div class="change">${s.change>0?'+':''}${s.change}%</div>${zjText}`;
   grid.appendChild(div);
+});
+
+// ========== 交易时间 & 自动刷新逻辑 ==========
+const REFRESH_INTERVAL = 60; // 秒
+
+function getMarketStatus() {
+  const now = new Date();
+  const day = now.getDay(); // 0=周日, 6=周六
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const time = h * 60 + m; // 分钟数
+
+  // 周末休市
+  if (day === 0 || day === 6) {
+    return { trading: false, status: 'holiday', label: '周末休市', reason: '周六/周日不开盘' };
+  }
+
+  // 交易时段判断 (A股: 9:30-11:30, 13:00-15:00)
+  const amStart = 9 * 60 + 30;  // 570
+  const amEnd = 11 * 60 + 30;   // 690
+  const pmStart = 13 * 60;      // 780
+  const pmEnd = 15 * 60;        // 900
+
+  if ((time >= amStart && time < amEnd) || (time >= pmStart && time < pmEnd)) {
+    return { trading: true, status: 'open', label: '交易中', reason: 'A股交易时段' };
+  }
+
+  // 盘前/盘后
+  return { trading: false, status: 'closed', label: '已收盘', reason: '非交易时段' };
+}
+
+function formatTimeLeft(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m > 0) return `${m}分${s}秒`;
+  return `${s}秒`;
+}
+
+let countdown = REFRESH_INTERVAL;
+let timer = null;
+
+function updateUI() {
+  const market = getMarketStatus();
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const marketStatus = document.getElementById('marketStatus');
+  const countdownEl = document.getElementById('countdown');
+
+  // 更新市场状态
+  marketStatus.textContent = market.label;
+  marketStatus.className = 'market-status ' + market.status;
+
+  if (market.trading) {
+    dot.className = 'status-dot';
+    statusText.textContent = '自动刷新中';
+    countdownEl.textContent = formatTimeLeft(countdown);
+  } else {
+    dot.className = 'status-dot ' + (market.status === 'holiday' ? 'off' : 'paused');
+    statusText.textContent = market.reason;
+    countdownEl.textContent = '—';
+  }
+}
+
+function tick() {
+  const market = getMarketStatus();
+
+  if (market.trading) {
+    countdown--;
+    if (countdown <= 0) {
+      forceRefresh();
+      return;
+    }
+  }
+
+  updateUI();
+}
+
+function forceRefresh() {
+  countdown = REFRESH_INTERVAL;
+  const url = new URL(window.location.href);
+  url.searchParams.set('t', Date.now());
+  window.location.href = url.toString();
+}
+
+// 初始化页面日期信息
+function initDateInfo() {
+  const now = new Date();
+  const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  document.getElementById('pageDate').textContent = `${todayStr} ${weekdays[now.getDay()]} | 主力流入越多 → 方块越大`;
+
+  // 数据日期：如果是交易日显示今天，否则显示上一交易日（简化处理：周五数据，周末显示周五）
+  const day = now.getDay();
+  let dataDay = new Date(now);
+  if (day === 0) dataDay.setDate(dataDay.getDate() - 2); // 周日 → 周五
+  else if (day === 6) dataDay.setDate(dataDay.getDate() - 1); // 周六 → 周五
+
+  const dataStr = `${dataDay.getFullYear()}-${String(dataDay.getMonth()+1).padStart(2,'0')}-${String(dataDay.getDate()).padStart(2,'0')}`;
+  const isHoliday = (day === 0 || day === 6);
+  const holidayNote = isHoliday ? ' | 今日休市，数据为上一交易日' : '';
+  document.getElementById('dataDate').textContent = `📅 数据日期：${dataStr}${holidayNote}`;
+}
+
+// 启动
+initDateInfo();
+updateUI();
+timer = setInterval(tick, 1000);
+
+// 页面可见性变化时暂停/恢复计时器（切后台不浪费资源）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(timer);
+  } else {
+    timer = setInterval(tick, 1000);
+    updateUI();
+  }
 });
 </script>
 </body>
