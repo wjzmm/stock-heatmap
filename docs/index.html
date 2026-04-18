@@ -20,36 +20,46 @@ body { background: #080c14; color: #e0e0e0; font-family: -apple-system, BlinkMac
 .view { display: none; max-width: 900px; margin: 0 auto; }
 .view.active { display: block; }
 
-/* 板块 */
-.sector-list { display: flex; flex-wrap: wrap; gap: 4px; }
+/* 板块列表 */
+.sector-list { display: flex; flex-direction: column; gap: 3px; }
+@media (min-width: 480px) { .sector-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; } }
+@media (min-width: 768px) { .sector-list { grid-template-columns: repeat(4, 1fr); gap: 6px; } }
+
 .sector-card {
-  border-radius: 5px; padding: 5px 4px;
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
-  text-align: center; min-height: 44px;
-  transition: all 0.15s; position: relative; flex: 1 0 calc(50% - 2px);
+  border-radius: 4px; padding: 5px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 36px;
+  transition: all 0.15s; position: relative;
 }
-@media (min-width: 480px) { .sector-card { flex: 1 0 calc(33.33% - 3px); } }
-@media (min-width: 768px) { .sector-card { flex: 1 0 calc(25% - 4px); } }
-.sector-card:active { transform: scale(0.96); }
+@media (min-width: 480px) {
+  .sector-card { flex-direction: column; justify-content: center; min-height: 52px; padding: 5px 4px; }
+}
+.sector-card:active { transform: scale(0.98); }
 .sector-card.has-stocks { cursor: pointer; }
 .sector-card.has-stocks::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; background: rgba(255,255,255,0.6); border-radius: 50%; }
-.s-name { font-size: 12px; font-weight: 700; white-space: nowrap; line-height: 1.1; }
-.s-change { font-size: 14px; margin-top: 1px; font-weight: 800; line-height: 1.1; }
-.s-meta { font-size: 9px; opacity: 0.85; margin-top: 1px; line-height: 1.1; }
-.s-hint { font-size: 8px; opacity: 0.5; margin-top: 1px; line-height: 1.1; }
+.s-left { display: flex; align-items: center; gap: 8px; }
+.s-name { font-size: 14px; font-weight: 700; white-space: nowrap; line-height: 1; }
+.s-change { font-size: 16px; font-weight: 800; line-height: 1; }
+.s-meta { font-size: 10px; opacity: 0.85; line-height: 1; }
+.s-hint { font-size: 9px; opacity: 0.5; line-height: 1; margin-left: 4px; }
 
 /* 全市场 */
-.stock-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.stock-list { display: flex; flex-direction: column; gap: 3px; }
+@media (min-width: 480px) { .stock-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; } }
+@media (min-width: 768px) { .stock-list { grid-template-columns: repeat(4, 1fr); gap: 6px; } }
+
 .stock-card {
-  border-radius: 5px; padding: 5px 4px;
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
-  text-align: center; min-height: 44px; flex: 1 0 calc(50% - 2px);
+  border-radius: 4px; padding: 5px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 36px;
 }
-@media (min-width: 480px) { .stock-card { flex: 1 0 calc(33.33% - 3px); } }
-@media (min-width: 768px) { .stock-card { flex: 1 0 calc(25% - 4px); } }
-.st-name { font-size: 12px; font-weight: 600; white-space: nowrap; line-height: 1.1; }
-.st-change { font-size: 14px; margin-top: 1px; font-weight: 700; line-height: 1.1; }
-.st-meta { font-size: 9px; opacity: 0.85; margin-top: 1px; line-height: 1.1; }
+@media (min-width: 480px) {
+  .stock-card { flex-direction: column; justify-content: center; min-height: 52px; padding: 5px 4px; }
+}
+.st-left { display: flex; align-items: center; gap: 8px; }
+.st-name { font-size: 14px; font-weight: 600; white-space: nowrap; line-height: 1; }
+.st-change { font-size: 16px; font-weight: 700; line-height: 1; }
+.st-meta { font-size: 10px; opacity: 0.85; line-height: 1; }
 
 /* 详情 */
 .detail-header {
@@ -129,24 +139,35 @@ function cls(c) {
 function renderSectors(limit) {
   const g = document.getElementById('sectorGrid'); g.innerHTML = '';
   const list = limit ? sectors.slice(0, limit) : sectors;
+  const isMobile = window.innerWidth < 480;
   list.forEach((s, i) => {
     const d = document.createElement('div');
     const has = s.stocks && s.stocks.length > 0;
     d.className = 'sector-card ' + cls(s.change) + (has ? ' has-stocks' : '');
     if (has) d.onclick = () => showDetail(i);
     const mainTxt = s.main > 0 ? `+主力${s.main}亿` : (s.main < 0 ? `主力${s.main}亿` : '');
-    const hint = has ? `<div class="s-hint">展开${s.stocks.length}只→</div>` : '';
-    d.innerHTML = `<div class="s-name">${s.name}</div><div class="s-change">${s.change>0?'+':''}${s.change}%</div><div class="s-meta">${mainTxt} 成交${s.amount}亿</div>${hint}`;
+    if (isMobile) {
+      const hint = has ? '<span class="s-hint">→</span>' : '';
+      d.innerHTML = `<div class="s-left"><span class="s-name">${s.name}</span><span class="s-change">${s.change>0?'+':''}${s.change}%</span></div><div style="text-align:right"><div class="s-meta">${mainTxt} 成交${s.amount}亿</div>${hint}</div>`;
+    } else {
+      const hint = has ? `<div class="s-hint">展开${s.stocks.length}只→</div>` : '';
+      d.innerHTML = `<div class="s-name">${s.name}</div><div class="s-change">${s.change>0?'+':''}${s.change}%</div><div class="s-meta">${mainTxt} 成交${s.amount}亿</div>${hint}`;
+    }
     g.appendChild(d);
   });
 }
 function showAll() { renderSectors(null); document.getElementById('showMoreWrap').style.display = 'none'; }
 function renderMarket() {
   const g = document.getElementById('marketGrid'); g.innerHTML = '';
+  const isMobile = window.innerWidth < 480;
   top100.forEach(st => {
     const d = document.createElement('div'); d.className = 'stock-card ' + cls(st.change);
     const zj = st.zj ? `<div class="st-meta">💵${st.zj>0?'+':''}${st.zj}万</div>` : '';
-    d.innerHTML = `<div class="st-name">${st.name}</div><div class="st-change">${st.change>0?'+':''}${st.change}%</div><div class="st-meta">成交${st.amount}亿</div>${zj}`;
+    if (isMobile) {
+      d.innerHTML = `<div class="st-left"><span class="st-name">${st.name}</span><span class="st-change">${st.change>0?'+':''}${st.change}%</span></div><div style="text-align:right"><div class="st-meta">成交${st.amount}亿</div>${zj}</div>`;
+    } else {
+      d.innerHTML = `<div class="st-name">${st.name}</div><div class="st-change">${st.change>0?'+':''}${st.change}%</div><div class="st-meta">成交${st.amount}亿</div>${zj}`;
+    }
     g.appendChild(d);
   });
 }
@@ -160,10 +181,15 @@ function showDetail(idx) {
   const m = s.main > 0 ? `主力流入+¥${s.main}亿` : (s.main < 0 ? `主力流出¥${Math.abs(s.main)}亿` : '主力: 平');
   document.getElementById('detailMeta').textContent = `涨跌 ${s.change>0?'+':''}${s.change}% | ${m}`;
   const g = document.getElementById('detailGrid'); g.innerHTML = '';
+  const isMobile = window.innerWidth < 480;
   s.stocks.forEach(st => {
     const d = document.createElement('div'); d.className = 'stock-card ' + cls(st.change);
     const zj = st.zj ? `<div class="st-meta">💵${st.zj>0?'+':''}${st.zj}万</div>` : '';
-    d.innerHTML = `<div class="st-name">${st.name}</div><div class="st-change">${st.change>0?'+':''}${st.change}%</div>${zj}`;
+    if (isMobile) {
+      d.innerHTML = `<div class="st-left"><span class="st-name">${st.name}</span><span class="st-change">${st.change>0?'+':''}${st.change}%</span></div><div style="text-align:right">${zj}</div>`;
+    } else {
+      d.innerHTML = `<div class="st-name">${st.name}</div><div class="st-change">${st.change>0?'+':''}${st.change}%</div>${zj}`;
+    }
     g.appendChild(d);
   });
 }
@@ -189,6 +215,7 @@ function initDate() {
 renderSectors(30);
 renderMarket();
 initDate();
+window.addEventListener('resize', () => { renderSectors(30); renderMarket(); });
 </script>
 </body>
 </html>
