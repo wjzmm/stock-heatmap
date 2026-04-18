@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A股板块热度云图 - 主力版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0e1a;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  min-height: 100vh;
+  padding: 12px;
+}
+.header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.header h1 {
+  font-size: 20px;
+  color: #ff6b6b;
+  margin-bottom: 2px;
+}
+.header .subtitle {
+  color: #8892b0;
+  font-size: 11px;
+}
+.header .formula {
+  color: #5a6680;
+  font-size: 10px;
+  margin-top: 2px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.block {
+  border-radius: 3px;
+  padding: 5px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 45px;
+  transition: transform 0.15s;
+}
+.block:hover {
+  transform: scale(1.04);
+  z-index: 10;
+  filter: brightness(1.15);
+}
+.name {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.change {
+  font-size: 10px;
+  margin-top: 1px;
+  font-weight: 500;
+}
+.zj {
+  font-size: 9px;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+/* 颜色系统 - 中国股市红涨绿跌 */
+.up-h { background: #b71c1c; color: #fff; }
+.up-m { background: #d32f2f; color: #fff; }
+.up-l { background: #f44336; color: #fff; }
+.up-s { background: #ef5350; color: #fff; }
+.up-xs { background: #e57373; color: #fff; }
+.flat { background: #616161; color: #fff; }
+.down-xs { background: #81c784; color: #1b5e20; }
+.down-s { background: #66bb6a; color: #fff; }
+.down-l { background: #43a047; color: #fff; }
+.down-m { background: #2e7d32; color: #fff; }
+.down-h { background: #1b5e20; color: #fff; }
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  color: #8892b0;
+}
+.legend-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.footer {
+  text-align: center;
+  margin-top: 6px;
+  color: #5a6680;
+  font-size: 9px;
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔥 A股板块热度云图 - 主力版</h1>
+  <div class="subtitle">2026-04-18 | 主力流入越多 → 方块越大</div>
+  <div class="formula">热度 = 换手率 × 涨跌幅 × 成交额 × 主力系数</div>
+</div>
+<div class="grid" id="grid"></div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-box up-h"></div>>7%</div>
+  <div class="legend-item"><div class="legend-box up-m"></div>3-7%</div>
+  <div class="legend-item"><div class="legend-box up-l"></div>1-3%</div>
+  <div class="legend-item"><div class="legend-box up-xs"></div>0-1%</div>
+  <div class="legend-item"><div class="legend-box flat"></div>0%</div>
+  <div class="legend-item"><div class="legend-box down-xs"></div>0~-1%</div>
+  <div class="legend-item"><div class="legend-box down-l"></div>-1~-3%</div>
+  <div class="legend-item"><div class="legend-box down-m"></div>-3~-7%</div>
+  <div class="legend-item"><div class="legend-box down-h"></div><-7%</div>
+</div>
+<div class="footer">
+  数据源: 腾讯财经 + 东方财富主力流向 | 红色=涨 绿色=跌
+</div>
+<script>
+const stocks = [
+  { name: "光迅科技", change: 10.0, heat: 42.78, zj: "+96825万", sector: "光通信/CPO" },
+  { name: "长芯博创", change: 7.79, heat: 42.16, zj: "+56354万", sector: "光通信/CPO" },
+  { name: "剑桥科技", change: 10.0, heat: 39.72, zj: "+64123万", sector: "光通信/CPO" },
+  { name: "天孚通信", change: 6.67, heat: 32.98, zj: "+36919万", sector: "光通信/CPO" },
+  { name: "新易盛", change: 9.58, heat: 28.63, zj: "+34641万", sector: "光通信/CPO" },
+  { name: "中际旭创", change: 5.11, heat: 22.09, zj: "", sector: "光通信/CPO" },
+  { name: "赣锋锂业", change: -1.8, heat: 33.82, zj: "", sector: "锂电池" },
+  { name: "华友钴业", change: 0.46, heat: 30.91, zj: "", sector: "锂电池" },
+  { name: "天赐材料", change: -0.75, heat: 30.76, zj: "", sector: "锂电池" },
+  { name: "国轩高科", change: 1.13, heat: 14.6, zj: "", sector: "锂电池" },
+  { name: "亿纬锂能", change: -1.59, heat: 12.21, zj: "", sector: "锂电池" },
+  { name: "宁德时代", change: -2.15, heat: 4.48, zj: "", sector: "锂电池" },
+  { name: "中科曙光", change: 1.05, heat: 16.85, zj: "+30593万", sector: "人工智能" },
+  { name: "浪潮信息", change: -0.07, heat: 15.9, zj: "", sector: "人工智能" },
+  { name: "昆仑万维", change: 1.15, heat: 12.91, zj: "", sector: "人工智能" },
+  { name: "寒武纪", change: 2.07, heat: 7.99, zj: "", sector: "人工智能" },
+  { name: "中科创达", change: -0.32, heat: 4.26, zj: "", sector: "人工智能" },
+  { name: "科大讯飞", change: 0.29, heat: 3.61, zj: "", sector: "人工智能" },
+  { name: "驰宏锌锗", change: 5.48, heat: 13.7, zj: "+19813万", sector: "铜/有色" },
+  { name: "北方稀土", change: -0.34, heat: 11.55, zj: "", sector: "铜/有色" },
+  { name: "云南铜业", change: 1.12, heat: 5.88, zj: "", sector: "铜/有色" },
+  { name: "中国铝业", change: -0.86, heat: 4.81, zj: "", sector: "铜/有色" },
+  { name: "紫金矿业", change: -1.61, heat: 4.62, zj: "", sector: "铜/有色" },
+  { name: "江西铜业", change: -1.0, heat: 3.94, zj: "", sector: "铜/有色" },
+  { name: "卓胜微", change: 2.45, heat: 24.34, zj: "", sector: "半导体" },
+  { name: "长电科技", change: 0.57, heat: 11.5, zj: "", sector: "半导体" },
+  { name: "中芯国际", change: 1.01, heat: 10.5, zj: "+17760万", sector: "半导体" },
+  { name: "北方华创", change: -0.77, heat: 5.09, zj: "", sector: "半导体" },
+  { name: "豪威集团", change: -0.71, heat: 3.87, zj: "", sector: "半导体" },
+  { name: "瑞芯微", change: -0.03, heat: 3.07, zj: "", sector: "半导体" },
+  { name: "贵州茅台", change: -3.8, heat: 3.93, zj: "", sector: "白酒" },
+  { name: "舍得酒业", change: -2.15, heat: 2.07, zj: "", sector: "白酒" },
+  { name: "泸州老窖", change: -1.8, heat: 1.5, zj: "", sector: "白酒" },
+  { name: "五 粮 液", change: -1.53, heat: 1.26, zj: "", sector: "白酒" },
+  { name: "古井贡酒", change: -1.4, heat: 0.68, zj: "", sector: "白酒" },
+  { name: "山西汾酒", change: -1.18, heat: 0.66, zj: "", sector: "白酒" },
+  { name: "立讯精密", change: -1.16, heat: 8.24, zj: "", sector: "消费电子" },
+  { name: "格力电器", change: -0.99, heat: 1.96, zj: "", sector: "消费电子" },
+  { name: "海尔智家", change: -1.0, heat: 1.67, zj: "", sector: "消费电子" },
+  { name: "美的集团", change: 0.96, heat: 1.26, zj: "", sector: "消费电子" },
+  { name: "科沃斯", change: -0.75, heat: 0.81, zj: "", sector: "消费电子" },
+  { name: "老板电器", change: -0.65, heat: 0.27, zj: "", sector: "消费电子" },
+  { name: "阳光电源", change: -0.86, heat: 18.51, zj: "", sector: "光伏" },
+  { name: "爱旭股份", change: 1.85, heat: 4.49, zj: "", sector: "光伏" },
+  { name: "隆基绿能", change: -0.4, heat: 4.25, zj: "", sector: "光伏" },
+  { name: "晶澳科技", change: 0.37, heat: 2.48, zj: "", sector: "光伏" },
+  { name: "天合光能", change: 0.12, heat: 2.4, zj: "", sector: "光伏" },
+  { name: "通威股份", change: 0.11, heat: 2.16, zj: "", sector: "光伏" },
+  { name: "中国平安", change: -1.03, heat: 2.07, zj: "", sector: "金融" },
+  { name: "建设银行", change: -0.42, heat: 1.31, zj: "", sector: "金融" },
+  { name: "招商银行", change: -0.98, heat: 1.0, zj: "+15774万", sector: "金融" },
+  { name: "农业银行", change: 0.86, heat: 0.36, zj: "", sector: "金融" },
+  { name: "中国人寿", change: -0.92, heat: 0.16, zj: "", sector: "金融" },
+  { name: "工商银行", change: -0.27, heat: 0.15, zj: "", sector: "金融" },
+  { name: "广联航空", change: 5.14, heat: 88.79, zj: "+24133万", sector: "低空经济" },
+  { name: "海特高新", change: 5.29, heat: 38.5, zj: "+14959万", sector: "低空经济" },
+  { name: "北斗星通", change: 0.26, heat: 4.18, zj: "", sector: "低空经济" },
+  { name: "海康威视", change: -1.22, heat: 2.95, zj: "", sector: "低空经济" },
+  { name: "中信海直", change: 0.83, heat: 2.6, zj: "", sector: "低空经济" },
+  { name: "航发动力", change: -1.7, heat: 2.41, zj: "", sector: "低空经济" },
+  { name: "恒瑞医药", change: -1.98, heat: 3.64, zj: "", sector: "医药" },
+  { name: "迈瑞医疗", change: -2.31, heat: 2.05, zj: "", sector: "医药" },
+  { name: "乐普医疗", change: -1.74, heat: 2.04, zj: "", sector: "医药" },
+  { name: "复星医药", change: -2.06, heat: 1.81, zj: "", sector: "医药" },
+  { name: "长春高新", change: -0.78, heat: 1.54, zj: "", sector: "医药" },
+  { name: "云南白药", change: -0.41, heat: 0.59, zj: "", sector: "医药" },
+  { name: "中国核电", change: -0.8, heat: 1.41, zj: "", sector: "电力" },
+  { name: "华电国际", change: -0.43, heat: 1.34, zj: "", sector: "电力" },
+  { name: "华能国际", change: -0.72, heat: 1.19, zj: "", sector: "电力" },
+  { name: "长江电力", change: -0.64, heat: 1.08, zj: "", sector: "电力" },
+  { name: "国电电力", change: -0.21, heat: 0.99, zj: "", sector: "电力" },
+  { name: "浙能电力", change: -0.54, heat: 0.31, zj: "", sector: "电力" },
+];
+
+function getCls(c) {
+  if (c >= 7) return 'up-h';
+  if (c >= 3) return 'up-m';
+  if (c >= 1) return 'up-l';
+  if (c > 0) return 'up-xs';
+  if (c === 0) return 'flat';
+  if (c > -1) return 'down-xs';
+  if (c > -3) return 'down-l';
+  if (c > -5) return 'down-m';
+  return 'down-h';
+}
+
+const maxH = Math.max(...stocks.map(s=>s.heat));
+const grid = document.getElementById('grid');
+
+stocks.forEach(s => {
+  const div = document.createElement('div');
+  div.className = `block ${getCls(s.change)}`;
+  // grid spanning based on heat
+  const span = Math.max(1, Math.round((s.heat / maxH) * 3));
+  div.style.gridColumn = `span ${span}`;
+  div.style.gridRow = `span ${span >= 2 ? 2 : 1}`;
+  const zjText = s.zj ? `<div class="zj">💵${s.zj}</div>` : '';
+  div.innerHTML = `<div class="name">${s.name}</div><div class="change">${s.change>0?'+':''}${s.change}%</div>${zjText}`;
+  grid.appendChild(div);
+});
+</script>
+</body>
+</html>
