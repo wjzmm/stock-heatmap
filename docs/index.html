@@ -102,10 +102,25 @@ function resize() {
   if (nodes.length) draw();
 }
 
-async function loadData() {
-  try {
-    const res = await fetch(API_URL);
-    const json = await res.json();
+function loadData() {
+  loading.style.display = 'block';
+  loading.textContent = '加载中...';
+  const cbName = '_em_' + Date.now();
+  const script = document.createElement('script');
+  script.src = API_URL + '&cb=' + cbName;
+
+  function cleanup() {
+    delete window[cbName];
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }
+
+  script.onerror = () => {
+    loading.textContent = '加载失败';
+    cleanup();
+  };
+
+  window[cbName] = (json) => {
+    cleanup();
     const items = json.data?.diff || [];
     const stocks = items.map(d => ({
       code: d.f12, name: d.f14, price: d.f2, change: d.f3,
@@ -154,10 +169,9 @@ async function loadData() {
 
     loading.style.display = 'none';
     draw();
-  } catch (e) {
-    loading.textContent = '加载失败: ' + e.message;
-    console.error(e);
-  }
+  };
+
+  document.head.appendChild(script);
 }
 
 function draw() {
