@@ -2,38 +2,62 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<!-- v20260419-2230-fix-d3 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>A股大盘云图</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:#1a1d29;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",PingFang SC,Microsoft YaHei,sans-serif;overflow:hidden;touch-action:none}
-#header{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#252a38;border-bottom:1px solid rgba(255,255,255,0.06)}
-#header h1{font-size:16px;font-weight:700;color:#ff6b6b;letter-spacing:1px}
-#header .info{font-size:11px;color:#8b92a8}
-#canvas-wrap{position:relative;width:100vw;height:calc(100vh - 44px)}
+body{background:#2a2d38;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",PingFang SC,Microsoft YaHei,sans-serif;overflow:hidden;touch-action:none}
+#header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#323543;border-bottom:1px solid rgba(255,255,255,0.06)}
+#header h1{font-size:17px;font-weight:700;color:#ff5252;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+#header .indices{display:flex;gap:14px;font-size:12px}
+#header .indices .idx{display:flex;align-items:center;gap:4px}
+#header .indices .idx .name{color:#8b92a8}
+#header .indices .idx .val{font-weight:600}
+#header .indices .idx .pct{font-size:11px}
+#header .indices .up{color:#ff6b6b}
+#header .indices .down{color:#52c41a}
+#header .date{font-size:11px;color:#6b7280}
+#canvas-wrap{position:relative;width:100vw;height:calc(100vh - 56px)}
 canvas{display:block;width:100%;height:100%}
-#tooltip{position:absolute;display:none;background:rgba(30,35,50,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);z-index:100;max-width:200px;line-height:1.6}
-#tooltip .name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
-#tooltip .row{display:flex;justify-content:space-between;gap:12px;color:#aab2c8}
-#tooltip .up{color:#ff5252}
-#tooltip .down{color:#00d641}
-#legend{position:absolute;right:8px;top:8px;background:rgba(30,35,50,0.85);border-radius:6px;padding:6px 8px;font-size:10px;color:#8b92a8;pointer-events:none}
-#legend .bar{width:80px;height:8px;border-radius:4px;margin-top:4px;background:linear-gradient(to right,#00d641,#1a1a2e,#ff5252)}
-#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#1a1d29;z-index:200;font-size:14px;color:#8b92a8}
+#tooltip{position:absolute;display:none;background:rgba(20,22,30,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;font-size:12px;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:100;max-width:220px;line-height:1.6;backdrop-filter:blur(8px)}
+#tooltip .name{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px}
+#tooltip .row{display:flex;justify-content:space-between;gap:16px;color:#9ca3af;margin-bottom:2px}
+#tooltip .up{color:#ff6b6b}
+#tooltip .down{color:#52c41a}
+#legend{position:absolute;right:10px;top:10px;background:rgba(30,33,45,0.9);border-radius:8px;padding:8px 10px;font-size:10px;color:#8b92a8;pointer-events:none;border:1px solid rgba(255,255,255,0.06)}
+#legend .title{margin-bottom:4px;font-size:11px;color:#d1d5db;font-weight:500}
+#legend .bar{width:90px;height:10px;border-radius:5px;margin:4px 0;display:flex;overflow:hidden}
+#legend .bar span{flex:1;height:100%}
+#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#2a2d38;z-index:200;font-size:14px;color:#6b7280}
 </style>
 </head>
 <body>
-<div id="header"><h1>🔥 A股大盘云图</h1><span class="info" id="status">加载中...</span></div>
+<div id="header">
+  <h1>🔥 A股大盘云图</h1>
+  <div class="indices" id="indices">
+    <div class="idx"><span class="name">上证</span><span class="val" id="idx-sh">--</span><span class="pct" id="pct-sh">--</span></div>
+    <div class="idx"><span class="name">深证</span><span class="val" id="idx-sz">--</span><span class="pct" id="pct-sz">--</span></div>
+    <div class="idx"><span class="name">创业</span><span class="val" id="idx-cy">--</span><span class="pct" id="pct-cy">--</span></div>
+  </div>
+  <span class="date" id="status">加载中...</span>
+</div>
 <div id="canvas-wrap">
   <div id="loading">正在加载数据...</div>
   <canvas id="chart"></canvas>
-  <div id="legend">涨跌幅<div class="bar"></div>-5% &nbsp; 0% &nbsp; +5%</div>
+  <div id="legend">
+    <div class="title">涨跌幅</div>
+    <div class="bar">
+      <span style="background:#00d641"></span><span style="background:#1aa448"></span><span style="background:#0e6f2f"></span>
+      <span style="background:#085421"></span><span style="background:#424453"></span><span style="background:#6d1414"></span>
+      <span style="background:#961010"></span><span style="background:#be0808"></span><span style="background:#e41414"></span>
+    </div>
+    <div style="display:flex;justify-content:space-between;width:90px"><span>-4%</span><span>0%</span><span>+4%</span></div>
+  </div>
   <div id="tooltip">
     <div class="name" id="tt-name"></div>
     <div class="row"><span>涨跌幅</span><span id="tt-change"></span></div>
     <div class="row"><span>市值</span><span id="tt-cap"></span></div>
+    <div class="row"><span>行业</span><span id="tt-sector"></span></div>
   </div>
 </div>
 
@@ -53,23 +77,34 @@ canvas{display:block;width:100%;height:100%}
   const status = document.getElementById('status');
   let rootData = null, leaves = [], dpr = 1;
 
-  function formatCap(v){
-    if(v >= 10000) return (v/10000).toFixed(2) + '万亿';
-    return v.toFixed(0) + '亿';
+  // dapanyuntu 色阶（9级）
+  const COLORS = {
+    up:   ['#e41414','#be0808','#961010','#6d1414'],
+    mid:  '#424453',
+    down: ['#085421','#0e6f2f','#1aa448','#00d641']
+  };
+
+  function getStepColor(c){
+    if(c === undefined || c === null) return COLORS.mid;
+    if(c > 0){
+      if(c >= 4) return COLORS.up[0];
+      if(c >= 3) return COLORS.up[1];
+      if(c >= 2) return COLORS.up[2];
+      return COLORS.up[3];
+    } else if(c < 0){
+      const a = Math.abs(c);
+      if(a >= 4) return COLORS.down[3];
+      if(a >= 3) return COLORS.down[2];
+      if(a >= 2) return COLORS.down[1];
+      return COLORS.down[0];
+    }
+    return COLORS.mid;
   }
 
-  function colorForChange(c){
-    if(c === undefined || c === null) return '#424453';
-    if(c > 0){
-      const t = Math.min(c / 5, 1);
-      const r = 255, g = Math.round(80 + 60 * (1 - t)), b = Math.round(80 + 60 * (1 - t));
-      return `rgb(${r},${g},${b})`;
-    } else if(c < 0){
-      const t = Math.min(Math.abs(c) / 5, 1);
-      const r = Math.round(60 + 80 * (1 - t)), g = 255, b = Math.round(80 + 60 * (1 - t));
-      return `rgb(${r},${g},${b})`;
-    }
-    return '#424453';
+  function formatCap(v){
+    if(v >= 10000) return (v/10000).toFixed(2) + '万亿';
+    if(v >= 100) return v.toFixed(0) + '亿';
+    return v.toFixed(1) + '亿';
   }
 
   function resize(){
@@ -84,77 +119,79 @@ canvas{display:block;width:100%;height:100%}
   function draw(data, W, H){
     ctx.clearRect(0, 0, W, H);
     const root = d3.hierarchy(data).sum(d => d.scale || 0).sort((a,b) => (b.value || 0) - (a.value || 0));
-    d3.treemap().size([W, H]).paddingOuter(2).paddingTop(18).paddingInner(1).round(true)(root);
+    d3.treemap().size([W, H]).paddingOuter(1).paddingTop(14).paddingInner(1).round(true)(root);
     leaves = root.leaves();
 
-    // 绘制行业背景和标题
+    // 收集行业区域
     const sectors = [];
+    const seen = new Set();
     leaves.forEach(d => {
       const p = d.parent;
       if(!p || p.depth !== 1) return;
       const key = p.data.id || p.data.name;
-      if(!sectors.find(s => s.key === key)){
+      if(!seen.has(key)){
+        seen.add(key);
         sectors.push({key, name: p.data.name, x0: p.x0, y0: p.y0, x1: p.x1, y1: p.y1, change: p.data.condition});
       }
     });
 
-    // 行业背景
+    // 行业背景 - 用极淡的颜色区分
     sectors.forEach(s => {
-      ctx.fillStyle = '#2a2f40';
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
       ctx.fillRect(s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0);
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.strokeRect(s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0);
     });
 
-    // 绘制个股
+    // 绘制个股方块
     leaves.forEach(d => {
       const x = d.x0, y = d.y0, w = d.x1 - d.x0, h = d.y1 - d.y0;
       if(w < 1 || h < 1) return;
       const c = d.data.condition;
-      ctx.fillStyle = colorForChange(c);
+      ctx.fillStyle = getStepColor(c);
       ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      // 极细的内部分隔线，不是黑边而是透明边
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
       ctx.lineWidth = 0.5;
       ctx.strokeRect(x, y, w, h);
 
-      // 文字
-      if(w > 30 && h > 18){
+      // 个股文字 - 只在足够大的方块显示
+      if(w > 35 && h > 20){
+        const fontSize = Math.min(10, Math.max(8, Math.floor(w / 4.5)));
         ctx.fillStyle = '#fff';
-        ctx.font = `bold ${Math.min(11, Math.floor(w/3.5))}px sans-serif`;
+        ctx.font = `500 ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const text = d.data.name;
-        const maxLen = Math.floor(w / 11);
-        const display = text.length > maxLen && maxLen > 1 ? text.slice(0, maxLen - 1) + '…' : text;
-        ctx.fillText(display, x + w/2, y + h/2 - 1);
-
-        if(w > 40 && h > 26){
-          ctx.font = `${Math.min(10, Math.floor(w/4))}px sans-serif`;
-          ctx.fillStyle = 'rgba(255,255,255,0.85)';
-          const pct = c > 0 ? '+' + c + '%' : c + '%';
-          ctx.fillText(pct, x + w/2, y + h/2 + 11);
-        }
+        const maxChars = Math.floor(w / (fontSize * 0.9));
+        const display = text.length > maxChars && maxChars > 1 ? text.slice(0, maxChars - 1) + '…' : text;
+        ctx.fillText(display, x + w/2, y + h/2);
       }
     });
 
-    // 行业标题
+    // 行业标题 - 画在方块内部顶部
     sectors.forEach(s => {
-      const w = s.x1 - s.x0;
-      if(w < 20) return;
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = 'bold 11px sans-serif';
+      const w = s.x1 - s.x0, h = s.y1 - s.y0;
+      if(w < 30 || h < 18) return;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      const txt = s.name + (s.change !== undefined ? ' ' + (s.change > 0 ? '+' : '') + s.change + '%' : '');
-      ctx.fillText(txt, s.x0 + 4, s.y0 + 3);
+      const chg = s.change !== undefined ? (s.change > 0 ? '+' : '') + s.change + '%' : '';
+      const txt = s.name + (chg ? ' ' + chg : '');
+      // 如果标题太长，截断
+      const maxW = w - 8;
+      let fitTxt = txt;
+      while(ctx.measureText(fitTxt).width > maxW && fitTxt.length > 2){
+        fitTxt = fitTxt.slice(0, -1);
+      }
+      if(fitTxt !== txt) fitTxt += '…';
+      ctx.fillText(fitTxt, s.x0 + 4, s.y0 + 2);
     });
 
-    status.textContent = '数据日期: ' + new Date().toLocaleDateString('zh-CN') + ' | 共' + leaves.length + '只股票';
+    status.textContent = new Date().toLocaleDateString('zh-CN') + ' | ' + leaves.length + '只';
   }
 
   function hitTest(x, y){
     if(!leaves.length) return null;
-    // 从大到小找，先找子节点
     for(let i=leaves.length-1;i>=0;i--){
       const d = leaves[i];
       if(x >= d.x0 && x <= d.x1 && y >= d.y0 && y <= d.y1) return d;
@@ -163,14 +200,14 @@ canvas{display:block;width:100%;height:100%}
   }
 
   function showTooltip(d, px, py){
-    const name = document.getElementById('tt-name');
-    const change = document.getElementById('tt-change');
-    const cap = document.getElementById('tt-cap');
-    name.textContent = d.data.name;
+    document.getElementById('tt-name').textContent = d.data.name;
     const c = d.data.condition;
-    change.textContent = (c > 0 ? '+' : '') + c + '%';
-    change.className = c >= 0 ? 'up' : 'down';
-    cap.textContent = formatCap(d.data.scale || 0);
+    const chgEl = document.getElementById('tt-change');
+    chgEl.textContent = (c > 0 ? '+' : '') + c + '%';
+    chgEl.className = c >= 0 ? 'up' : 'down';
+    document.getElementById('tt-cap').textContent = formatCap(d.data.scale || 0);
+    const sectorName = d.parent && d.parent.data ? d.parent.data.name : '';
+    document.getElementById('tt-sector').textContent = sectorName;
     tooltip.style.display = 'block';
     const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
     let left = px + 12, top = py + 12;
@@ -191,37 +228,44 @@ canvas{display:block;width:100%;height:100%}
   }
 
   canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
-  canvas.addEventListener('touchstart', e => {
-    if(e.touches.length === 1){
-      const t = e.touches[0];
-      handleMove(t.clientX, t.clientY);
-    }
-  }, {passive:true});
-  canvas.addEventListener('touchmove', e => {
-    if(e.touches.length === 1){
-      const t = e.touches[0];
-      handleMove(t.clientX, t.clientY);
-    }
-  }, {passive:true});
+  canvas.addEventListener('touchstart', e => { if(e.touches.length === 1){ handleMove(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:true});
+  canvas.addEventListener('touchmove', e => { if(e.touches.length === 1){ handleMove(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:true});
   canvas.addEventListener('touchend', hideTooltip);
   canvas.addEventListener('mouseleave', hideTooltip);
+  window.addEventListener('resize', resize);
 
-  window.addEventListener('resize', () => { resize(); });
+  // 加载大盘指数
+  function loadIndices(){
+    fetch('https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=5&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:1+t:2,m:0+t:6&fields=f2,f3,f12,f14')
+      .then(r => r.json())
+      .then(d => {
+        const map = {'sh000001':['idx-sh','pct-sh'],'sz399001':['idx-sz','pct-sz'],'sz399006':['idx-cy','pct-cy']};
+        (d.data?.diff || []).forEach(s => {
+          const code = s.f12;
+          if(map[code]){
+            const price = s.f2, pct = s.f3;
+            document.getElementById(map[code][0]).textContent = price;
+            const pEl = document.getElementById(map[code][1]);
+            pEl.textContent = (pct > 0 ? '+' : '') + pct + '%';
+            pEl.className = pct >= 0 ? 'up' : 'down';
+          }
+        });
+      }).catch(()=>{});
+  }
 
-  // 加载数据
+  // 加载云图数据
   fetch('treemap_data.json?v=' + Date.now())
     .then(r => r.json())
     .then(data => {
       rootData = data;
       loading.style.display = 'none';
+      loadIndices();
       resize();
     })
     .catch(err => {
       loading.textContent = '数据加载失败: ' + err.message;
-      console.error(err);
     });
 })();
-
 </script>
 </body>
 </html>
