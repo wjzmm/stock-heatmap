@@ -219,8 +219,8 @@ canvas.addEventListener('mousemove', e => {
 
 canvas.addEventListener('mouseleave', () => tooltip.style.opacity = '0');
 window.addEventListener('resize', () => { resize(); loadData(); });
-resize();
-loadData();
+window.addEventListener('load', () => { resize(); loadData(); });
+if (document.readyState === 'complete') { resize(); loadData(); }
 setInterval(loadData, 60000);
 </script>
 </body>
