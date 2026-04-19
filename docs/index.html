@@ -3,62 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>A股大盘云图</title>
+<title>大盘云图</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:#2a2d38;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",PingFang SC,Microsoft YaHei,sans-serif;overflow:hidden;touch-action:none}
-#header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#323543;border-bottom:1px solid rgba(255,255,255,0.06)}
-#header h1{font-size:17px;font-weight:700;color:#ff5252;letter-spacing:1px;display:flex;align-items:center;gap:6px}
-#header .indices{display:flex;gap:14px;font-size:12px}
-#header .indices .idx{display:flex;align-items:center;gap:4px}
-#header .indices .idx .name{color:#8b92a8}
-#header .indices .idx .val{font-weight:600}
-#header .indices .idx .pct{font-size:11px}
-#header .indices .up{color:#ff6b6b}
-#header .indices .down{color:#52c41a}
-#header .date{font-size:11px;color:#6b7280}
-#canvas-wrap{position:relative;width:100vw;height:calc(100vh - 56px)}
-canvas{display:block;width:100%;height:100%}
-#tooltip{position:absolute;display:none;background:rgba(20,22,30,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;font-size:12px;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:100;max-width:220px;line-height:1.6;backdrop-filter:blur(8px)}
-#tooltip .name{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px}
-#tooltip .row{display:flex;justify-content:space-between;gap:16px;color:#9ca3af;margin-bottom:2px}
-#tooltip .up{color:#ff6b6b}
-#tooltip .down{color:#52c41a}
-#legend{position:absolute;right:10px;top:10px;background:rgba(30,33,45,0.9);border-radius:8px;padding:8px 10px;font-size:10px;color:#8b92a8;pointer-events:none;border:1px solid rgba(255,255,255,0.06)}
-#legend .title{margin-bottom:4px;font-size:11px;color:#d1d5db;font-weight:500}
-#legend .bar{width:90px;height:10px;border-radius:5px;margin:4px 0;display:flex;overflow:hidden}
-#legend .bar span{flex:1;height:100%}
-#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#2a2d38;z-index:200;font-size:14px;color:#6b7280}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#252931;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",PingFang SC,Microsoft YaHei,sans-serif}
+#header{position:fixed;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:rgba(37,41,49,0.92);backdrop-filter:blur(8px);z-index:50;border-bottom:1px solid rgba(255,255,255,0.05)}
+#header h1{font-size:14px;font-weight:700;color:#ff5252;letter-spacing:1px}
+#header .meta{font-size:11px;color:#6b7280}
+canvas{display:block;width:100vw;height:100vh}
+#tooltip{position:fixed;display:none;background:rgba(20,22,30,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;font-size:12px;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:100;line-height:1.5}
+#tooltip .name{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
+#tooltip .row{display:flex;gap:12px;color:#9ca3af;font-size:11px}
+#tooltip .up{color:#ff4d4f}
+#tooltip .down{color:#00d641}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#252931;z-index:200;font-size:13px;color:#6b7280}
 </style>
 </head>
 <body>
-<div id="header">
-  <h1>🔥 A股大盘云图</h1>
-  <div class="indices" id="indices">
-    <div class="idx"><span class="name">上证</span><span class="val" id="idx-sh">--</span><span class="pct" id="pct-sh">--</span></div>
-    <div class="idx"><span class="name">深证</span><span class="val" id="idx-sz">--</span><span class="pct" id="pct-sz">--</span></div>
-    <div class="idx"><span class="name">创业</span><span class="val" id="idx-cy">--</span><span class="pct" id="pct-cy">--</span></div>
-  </div>
-  <span class="date" id="status">加载中...</span>
-</div>
-<div id="canvas-wrap">
-  <div id="loading">正在加载数据...</div>
-  <canvas id="chart"></canvas>
-  <div id="legend">
-    <div class="title">涨跌幅</div>
-    <div class="bar">
-      <span style="background:#00d641"></span><span style="background:#1aa448"></span><span style="background:#0e6f2f"></span>
-      <span style="background:#085421"></span><span style="background:#424453"></span><span style="background:#6d1414"></span>
-      <span style="background:#961010"></span><span style="background:#be0808"></span><span style="background:#e41414"></span>
-    </div>
-    <div style="display:flex;justify-content:space-between;width:90px"><span>-4%</span><span>0%</span><span>+4%</span></div>
-  </div>
-  <div id="tooltip">
-    <div class="name" id="tt-name"></div>
-    <div class="row"><span>涨跌幅</span><span id="tt-change"></span></div>
-    <div class="row"><span>市值</span><span id="tt-cap"></span></div>
-    <div class="row"><span>行业</span><span id="tt-sector"></span></div>
-  </div>
+<div id="header"><h1>🔥 大盘云图</h1><span class="meta" id="status">加载中...</span></div>
+<div id="loading">正在加载数据...</div>
+<canvas id="chart"></canvas>
+<div id="tooltip">
+  <div class="name" id="tt-name"></div>
+  <div class="row"><span id="tt-change"></span><span id="tt-cap"></span></div>
 </div>
 
 <script>
@@ -71,44 +39,34 @@ canvas{display:block;width:100%;height:100%}
   'use strict';
   const canvas = document.getElementById('chart');
   const ctx = canvas.getContext('2d');
-  const wrap = document.getElementById('canvas-wrap');
   const tooltip = document.getElementById('tooltip');
   const loading = document.getElementById('loading');
   const status = document.getElementById('status');
   let rootData = null, leaves = [], dpr = 1;
 
-  // dapanyuntu 色阶（9级）
+  // dapanyuntu 色阶 - 红涨绿跌
   const COLORS = {
     up:   ['#e41414','#be0808','#961010','#6d1414'],
     mid:  '#424453',
     down: ['#085421','#0e6f2f','#1aa448','#00d641']
   };
 
-  function getStepColor(c){
+  function getColor(c){
     if(c === undefined || c === null) return COLORS.mid;
     if(c > 0){
-      if(c >= 4) return COLORS.up[0];
-      if(c >= 3) return COLORS.up[1];
-      if(c >= 2) return COLORS.up[2];
-      return COLORS.up[3];
+      if(c >= 4) return COLORS.up[0]; if(c >= 3) return COLORS.up[1];
+      if(c >= 2) return COLORS.up[2]; return COLORS.up[3];
     } else if(c < 0){
-      const a = Math.abs(c);
-      if(a >= 4) return COLORS.down[3];
-      if(a >= 3) return COLORS.down[2];
-      if(a >= 2) return COLORS.down[1];
-      return COLORS.down[0];
+      const a = Math.abs(c); if(a >= 4) return COLORS.down[3]; if(a >= 3) return COLORS.down[2];
+      if(a >= 2) return COLORS.down[1]; return COLORS.down[0];
     }
     return COLORS.mid;
   }
 
-  function formatCap(v){
-    if(v >= 10000) return (v/10000).toFixed(2) + '万亿';
-    if(v >= 100) return v.toFixed(0) + '亿';
-    return v.toFixed(1) + '亿';
-  }
+  function fmtCap(v){ return v >= 10000 ? (v/10000).toFixed(1) + '万亿' : v >= 100 ? v.toFixed(0) + '亿' : v.toFixed(1) + '亿'; }
 
   function resize(){
-    const w = wrap.clientWidth, h = wrap.clientHeight;
+    const w = window.innerWidth, h = window.innerHeight;
     dpr = window.devicePixelRatio || 1;
     canvas.width = w * dpr; canvas.height = h * dpr;
     canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
@@ -118,8 +76,9 @@ canvas{display:block;width:100%;height:100%}
 
   function draw(data, W, H){
     ctx.clearRect(0, 0, W, H);
+    // ZERO PADDING - full bleed treemap like dapanyuntu
     const root = d3.hierarchy(data).sum(d => d.scale || 0).sort((a,b) => (b.value || 0) - (a.value || 0));
-    d3.treemap().size([W, H]).paddingOuter(1).paddingTop(14).paddingInner(1).round(true)(root);
+    d3.treemap().size([W, H]).paddingOuter(0).paddingTop(0).paddingInner(0).round(false)(root);
     leaves = root.leaves();
 
     // 收集行业区域
@@ -129,69 +88,62 @@ canvas{display:block;width:100%;height:100%}
       const p = d.parent;
       if(!p || p.depth !== 1) return;
       const key = p.data.id || p.data.name;
-      if(!seen.has(key)){
-        seen.add(key);
-        sectors.push({key, name: p.data.name, x0: p.x0, y0: p.y0, x1: p.x1, y1: p.y1, change: p.data.condition});
-      }
+      if(!seen.has(key)){ seen.add(key); sectors.push({key, name: p.data.name, x0: p.x0, y0: p.y0, x1: p.x1, y1: p.y1, change: p.data.condition}); }
     });
 
-    // 行业背景 - 用极淡的颜色区分
+    // 绘制行业背景底（极淡灰色，仅用于区分）
     sectors.forEach(s => {
-      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fillStyle = '#2a2d36';
       ctx.fillRect(s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0);
     });
 
-    // 绘制个股方块
+    // 绘制个股方块 - 紧密无间隙
     leaves.forEach(d => {
       const x = d.x0, y = d.y0, w = d.x1 - d.x0, h = d.y1 - d.y0;
-      if(w < 1 || h < 1) return;
-      const c = d.data.condition;
-      ctx.fillStyle = getStepColor(c);
+      if(w < 0.5 || h < 0.5) return;
+      ctx.fillStyle = getColor(d.data.condition);
       ctx.fillRect(x, y, w, h);
-      // 极细的内部分隔线，不是黑边而是透明边
-      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(x, y, w, h);
-
-      // 个股文字 - 只在足够大的方块显示
-      if(w > 35 && h > 20){
-        const fontSize = Math.min(10, Math.max(8, Math.floor(w / 4.5)));
-        ctx.fillStyle = '#fff';
-        ctx.font = `500 ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const text = d.data.name;
-        const maxChars = Math.floor(w / (fontSize * 0.9));
-        const display = text.length > maxChars && maxChars > 1 ? text.slice(0, maxChars - 1) + '…' : text;
-        ctx.fillText(display, x + w/2, y + h/2);
-      }
     });
 
-    // 行业标题 - 画在方块内部顶部
+    // 行业标题 - 直接画在方块上方，不占用额外布局空间
     sectors.forEach(s => {
       const w = s.x1 - s.x0, h = s.y1 - s.y0;
-      if(w < 30 || h < 18) return;
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
+      if(w < 25 || h < 14) return;
       const chg = s.change !== undefined ? (s.change > 0 ? '+' : '') + s.change + '%' : '';
       const txt = s.name + (chg ? ' ' + chg : '');
-      // 如果标题太长，截断
-      const maxW = w - 8;
-      let fitTxt = txt;
-      while(ctx.measureText(fitTxt).width > maxW && fitTxt.length > 2){
-        fitTxt = fitTxt.slice(0, -1);
-      }
-      if(fitTxt !== txt) fitTxt += '…';
-      ctx.fillText(fitTxt, s.x0 + 4, s.y0 + 2);
+
+      // 标题背景：半透明黑色，覆盖在方块上
+      ctx.font = 'bold 11px -apple-system, sans-serif';
+      const tw = ctx.measureText(txt).width;
+      if(tw + 8 > w) return; // 太窄不画
+
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(s.x0, s.y0, Math.min(tw + 8, w), 16);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(txt, s.x0 + 4, s.y0 + 2);
     });
 
-    status.textContent = new Date().toLocaleDateString('zh-CN') + ' | ' + leaves.length + '只';
+    // 个股名称 - 只在足够大的方块显示
+    leaves.forEach(d => {
+      const x = d.x0, y = d.y0, w = d.x1 - d.x0, h = d.y1 - d.y0;
+      if(w < 30 || h < 16) return;
+      const fs = Math.min(9, Math.max(7, w / 5));
+      ctx.font = `${fs}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const maxC = Math.floor(w / (fs * 0.85));
+      const name = d.data.name.length > maxC ? d.data.name.slice(0, maxC - 1) + '…' : d.data.name;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillText(name, x + w/2, y + h/2);
+    });
+
+    status.textContent = '2026/4/19 | ' + leaves.length + '只';
   }
 
   function hitTest(x, y){
-    if(!leaves.length) return null;
     for(let i=leaves.length-1;i>=0;i--){
       const d = leaves[i];
       if(x >= d.x0 && x <= d.x1 && y >= d.y0 && y <= d.y1) return d;
@@ -202,69 +154,40 @@ canvas{display:block;width:100%;height:100%}
   function showTooltip(d, px, py){
     document.getElementById('tt-name').textContent = d.data.name;
     const c = d.data.condition;
-    const chgEl = document.getElementById('tt-change');
-    chgEl.textContent = (c > 0 ? '+' : '') + c + '%';
-    chgEl.className = c >= 0 ? 'up' : 'down';
-    document.getElementById('tt-cap').textContent = formatCap(d.data.scale || 0);
-    const sectorName = d.parent && d.parent.data ? d.parent.data.name : '';
-    document.getElementById('tt-sector').textContent = sectorName;
+    const chg = document.getElementById('tt-change');
+    chg.textContent = (c > 0 ? '+' : '') + c + '%';
+    chg.className = c >= 0 ? 'up' : 'down';
+    document.getElementById('tt-cap').textContent = fmtCap(d.data.scale || 0);
     tooltip.style.display = 'block';
     const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
-    let left = px + 12, top = py + 12;
-    if(left + tw > wrap.clientWidth) left = px - tw - 8;
-    if(top + th > wrap.clientHeight) top = py - th - 8;
+    let left = px + 10, top = py + 10;
+    if(left + tw > window.innerWidth) left = px - tw - 6;
+    if(top + th > window.innerHeight) top = py - th - 6;
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
   }
 
   function hideTooltip(){ tooltip.style.display = 'none'; }
 
-  function handleMove(ex, ey){
+  function onMove(ex, ey){
     const rect = canvas.getBoundingClientRect();
     const x = ex - rect.left, y = ey - rect.top;
     const d = hitTest(x, y);
-    if(d){ showTooltip(d, x, y); canvas.style.cursor = 'pointer'; }
+    if(d){ showTooltip(d, ex, ey); canvas.style.cursor = 'pointer'; }
     else { hideTooltip(); canvas.style.cursor = 'default'; }
   }
 
-  canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
-  canvas.addEventListener('touchstart', e => { if(e.touches.length === 1){ handleMove(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:true});
-  canvas.addEventListener('touchmove', e => { if(e.touches.length === 1){ handleMove(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:true});
+  canvas.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  canvas.addEventListener('touchstart', e => { if(e.touches.length === 1){ onMove(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:true});
+  canvas.addEventListener('touchmove', e => { if(e.touches.length === 1){ onMove(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:true});
   canvas.addEventListener('touchend', hideTooltip);
   canvas.addEventListener('mouseleave', hideTooltip);
   window.addEventListener('resize', resize);
 
-  // 加载大盘指数
-  function loadIndices(){
-    fetch('https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=5&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:1+t:2,m:0+t:6&fields=f2,f3,f12,f14')
-      .then(r => r.json())
-      .then(d => {
-        const map = {'sh000001':['idx-sh','pct-sh'],'sz399001':['idx-sz','pct-sz'],'sz399006':['idx-cy','pct-cy']};
-        (d.data?.diff || []).forEach(s => {
-          const code = s.f12;
-          if(map[code]){
-            const price = s.f2, pct = s.f3;
-            document.getElementById(map[code][0]).textContent = price;
-            const pEl = document.getElementById(map[code][1]);
-            pEl.textContent = (pct > 0 ? '+' : '') + pct + '%';
-            pEl.className = pct >= 0 ? 'up' : 'down';
-          }
-        });
-      }).catch(()=>{});
-  }
-
-  // 加载云图数据
   fetch('treemap_data.json?v=' + Date.now())
     .then(r => r.json())
-    .then(data => {
-      rootData = data;
-      loading.style.display = 'none';
-      loadIndices();
-      resize();
-    })
-    .catch(err => {
-      loading.textContent = '数据加载失败: ' + err.message;
-    });
+    .then(data => { rootData = data; loading.style.display = 'none'; resize(); })
+    .catch(err => { loading.textContent = '失败: ' + err.message; });
 })();
 </script>
 </body>
