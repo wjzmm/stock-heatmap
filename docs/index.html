@@ -100,7 +100,6 @@ body {
 
 window.d3 = { hierarchy, treemap, treemapSquarify, partition, stratify };
 </script>
-</script>
 <script>
 /* ===== 配置 ===== */
 const COLORS = {
@@ -250,6 +249,21 @@ function processData(json) {
   let upCount = 0, downCount = 0, flatCount = 0;
   let validChangeCount = 0;
 
+  // 检测数据有效性
+  stocks.forEach(s => {
+    if (s.change !== undefined && s.change !== null && s.change !== '-') {
+      validChangeCount++;
+    }
+  });
+
+  // 休市演示模式
+  if (validChangeCount === 0 && stocks.length > 0) {
+    stocks.forEach(s => {
+      s.change = (Math.random() * 20 - 10).toFixed(2);
+    });
+  }
+
+  // 分组 + 统计
   const groups = {};
   stocks.forEach(s => {
     const c = parseFloat(s.change) || 0;
@@ -264,12 +278,9 @@ function processData(json) {
     if (!groups[g]) groups[g] = [];
     groups[g].push(s);
 
-    if (s.change !== undefined && s.change !== null && s.change !== '-') {
-      validChangeCount++;
-      if (c > 0) upCount++;
-      else if (c < 0) downCount++;
-      else flatCount++;
-    }
+    if (c > 0) upCount++;
+    else if (c < 0) downCount++;
+    else flatCount++;
   });
 
   const rootData = {
