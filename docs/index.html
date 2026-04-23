@@ -93,6 +93,9 @@ body {
       <span id="tt-change"></span>
       <span id="tt-cap"></span>
     </div>
+    <div class="tt-row" style="margin-top:4px;">
+      <span id="tt-heat" style="font-size:11px; font-family:'JetBrains Mono',monospace;"></span>
+    </div>
   </div>
 <script>
 // https://d3js.org/d3-hierarchy/ v3.1.2 Copyright 2010-2021 Mike Bostock
@@ -186,6 +189,10 @@ function draw() {
     if (n === hoveredNode) {
       ctx.shadowColor = 'rgba(255,255,255,0.22)';
       ctx.shadowBlur = 12;
+    } else if (d.heatScore > 0) {
+      const glow = d.heatScore / 100;
+      ctx.shadowColor = change > 0 ? `rgba(255,77,79,${0.15 + glow * 0.25})` : `rgba(0,214,65,${0.15 + glow * 0.25})`;
+      ctx.shadowBlur = 2 + glow * 6;
     } else {
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
@@ -241,7 +248,8 @@ function processData(json) {
   const items = json.data?.diff || [];
   const stocks = items.map(d => ({
     code: d.f12, name: d.f14, price: d.f2, change: d.f3,
-    marketCap: parseFloat(d.f20) || 1
+    marketCap: parseFloat(d.f20) || 1,
+    volume: d.f5, inflow: d.f62
   })).filter(s => s.name && s.marketCap > 0);
 
   let upCount = 0, downCount = 0, flatCount = 0;
@@ -258,6 +266,27 @@ function processData(json) {
   if (validChangeCount === 0 && stocks.length > 0) {
     stocks.forEach(s => {
       s.change = (Math.random() * 20 - 10).toFixed(2);
+      const baseHeat = Math.min(100, Math.abs(parseFloat(s.change)) * 8);
+      s.heatScore = Math.min(100, Math.round(baseHeat + Math.random() * 30));
+    });
+  }
+
+  // 计算热度分（实盘）
+  if (validChangeCount > 0) {
+    const vols = stocks.map(s => parseFloat(s.volume) || 0).filter(v => v > 0);
+    const infs = stocks.map(s => Math.abs(parseFloat(s.inflow)) || 0).filter(v => v > 0);
+    const maxVol = vols.length ? Math.max(...vols) : 0;
+    const maxInf = infs.length ? Math.max(...infs) : 0;
+    stocks.forEach(s => {
+      const vol = parseFloat(s.volume) || 0;
+      const inf = parseFloat(s.inflow) || 0;
+      if (vol > 0 || inf !== 0) {
+        const volScore = maxVol > 0 ? (vol / maxVol) * 60 : 0;
+        const infScore = maxInf > 0 ? (Math.abs(inf) / maxInf) * 40 : 0;
+        s.heatScore = Math.min(100, Math.round(volScore + infScore));
+      } else {
+        s.heatScore = 0;
+      }
     });
   }
 
@@ -358,6 +387,9 @@ canvas.addEventListener('mousemove', e => {
     ce.textContent = (c > 0 ? '+' : '') + c.toFixed(2) + '%';
     ce.className = c > 0 ? 'tt-up' : (c < 0 ? 'tt-down' : 'tt-flat');
     document.getElementById('tt-cap').textContent = '市值: ' + formatCap(d.marketCap);
+    const heat = d.heatScore || 0;
+    const heatIcons = '🔥'.repeat(Math.ceil(heat / 20));
+    document.getElementById('tt-heat').textContent = '热度: ' + (heatIcons || '—') + ' ' + heat;
     tooltip.classList.add('visible');
     tooltip.style.left = (e.clientX + 14) + 'px';
     tooltip.style.top = (e.clientY + 14) + 'px';
